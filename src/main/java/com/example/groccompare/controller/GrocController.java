@@ -1,6 +1,7 @@
 package com.example.groccompare.controller;
 
 import com.example.groccompare.model.Product;
+import org.springframework.beans.factory.annotation.Value; // Required for @Value
 import org.springframework.web.bind.annotation.*;
 import org.springframework.stereotype.Controller;
 import org.json.JSONArray;
@@ -16,7 +17,9 @@ import java.util.regex.Pattern;
 @Controller
 public class GrocController {
 
-    private final String API_KEY = "b2ee0f453dc636c7c9cb8deb537212f8037765332a606ef4635535a45c4f9cfa";
+    // This pulls the value you set in Railway's Variables tab
+    @Value("${SERPAPI_KEY}")
+    private String API_KEY;
 
     @GetMapping("/")
     public String index() { 
@@ -30,9 +33,13 @@ public class GrocController {
         List<Product> results = new ArrayList<>();
 
         try {
+            // Encode parameters to handle spaces and special characters
+            String encodedQuery = query.replace(" ", "+");
+            String encodedLocation = location.replace(" ", "+");
+            
             String searchUrl = "https://serpapi.com/search.json?engine=google_shopping&q=" 
-                                + query.replace(" ", "+") 
-                                + "&location=" + location.replace(" ", "+") + ",+India"
+                                + encodedQuery 
+                                + "&location=" + encodedLocation + ",+India"
                                 + "&gl=in&hl=en&api_key=" + API_KEY;
 
             HttpClient client = HttpClient.newHttpClient();
@@ -45,20 +52,18 @@ public class GrocController {
                 JSONArray shoppingResults = jsonResponse.getJSONArray("shopping_results");
                 int count = Math.min(shoppingResults.length(), 10);
                 
-                // Step 1: Calculate average price for trend logic
                 double totalSum = 0;
                 for (int i = 0; i < count; i++) {
                     totalSum += shoppingResults.getJSONObject(i).optDouble("extracted_price", 0.0);
                 }
                 double averagePrice = (count > 0) ? (totalSum / count) : 0.0;
 
-                // Step 2: Build the list with fixed links
                 for (int i = 0; i < count; i++) {
                     JSONObject item = shoppingResults.getJSONObject(i);
                     double currentItemPrice = item.optDouble("extracted_price", 0.0);
                     String title = item.optString("title", "Unknown Product");
 
-                    // FIX: Ensure the link is pulled correctly and made absolute
+                    // Link Fix: Capture store URL and force HTTPS
                     String rawLink = item.optString("link", "");
                     String absoluteLink = rawLink;
                     if (!rawLink.isEmpty() && !rawLink.startsWith("http")) {
@@ -67,14 +72,12 @@ public class GrocController {
                         absoluteLink = "#";
                     }
 
-                    // Price Trend Logic
                     String status = "Average";
                     if (averagePrice > 0) {
                         if (currentItemPrice < (averagePrice * 0.9)) status = "Low";
                         else if (currentItemPrice > (averagePrice * 1.1)) status = "High";
                     }
 
-                    // Map all fields to the Product record
                     results.add(new Product(
                         String.valueOf(i), 
                         title, 
@@ -82,7 +85,7 @@ public class GrocController {
                         currentItemPrice, 
                         currentItemPrice,
                         calculateNormalizedPrice(title, currentItemPrice),
-                        absoluteLink, // This MUST go here to reach app.js
+                        absoluteLink,
                         status
                     ));
                 }
