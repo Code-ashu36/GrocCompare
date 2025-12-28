@@ -1,7 +1,7 @@
 package com.example.groccompare.controller;
 
 import com.example.groccompare.model.Product;
-import org.springframework.beans.factory.annotation.Value; // Required for @Value
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.stereotype.Controller;
 import org.json.JSONArray;
@@ -17,7 +17,6 @@ import java.util.regex.Pattern;
 @Controller
 public class GrocController {
 
-    // This pulls the value you set in Railway's Variables tab
     @Value("${SERPAPI_KEY}")
     private String API_KEY;
 
@@ -33,7 +32,6 @@ public class GrocController {
         List<Product> results = new ArrayList<>();
 
         try {
-            // Encode parameters to handle spaces and special characters
             String encodedQuery = query.replace(" ", "+");
             String encodedLocation = location.replace(" ", "+");
             
@@ -63,13 +61,14 @@ public class GrocController {
                     double currentItemPrice = item.optDouble("extracted_price", 0.0);
                     String title = item.optString("title", "Unknown Product");
 
-                    // Link Fix: Capture store URL and force HTTPS
-                    String rawLink = item.optString("link", "");
-                    String absoluteLink = rawLink;
-                    if (!rawLink.isEmpty() && !rawLink.startsWith("http")) {
-                        absoluteLink = "https://" + rawLink;
-                    } else if (rawLink.isEmpty()) {
-                        absoluteLink = "#";
+                    // FIX: Direct Link Fallback Logic
+                    // 1. Try 'link' (direct merchant or redirect)
+                    // 2. Try 'product_link' (Google Shopping item page)
+                    String storeLink = item.optString("link", item.optString("product_link", ""));
+                    
+                    String absoluteLink = "#";
+                    if (!storeLink.isEmpty()) {
+                        absoluteLink = storeLink.startsWith("http") ? storeLink : "https://" + storeLink;
                     }
 
                     String status = "Average";
@@ -85,7 +84,7 @@ public class GrocController {
                         currentItemPrice, 
                         currentItemPrice,
                         calculateNormalizedPrice(title, currentItemPrice),
-                        absoluteLink,
+                        absoluteLink, // Maps to productLink in your JS
                         status
                     ));
                 }
@@ -95,7 +94,6 @@ public class GrocController {
         }
 
         results.sort(Comparator.comparingDouble(Product::normalizedPrice));
-        response.put("searchQuery", query);
         response.put("comparisonResults", results);
         if (!results.isEmpty()) response.put("globalBestDeal", results.get(0));
         
@@ -110,11 +108,7 @@ public class GrocController {
             if (matcher.find()) {
                 double quantity = Double.parseDouble(matcher.group(1));
                 String unit = matcher.group(2).toLowerCase();
-                if (unit.equals("g") || unit.equals("ml")) {
-                    return (price / quantity) * 1000;
-                } else {
-                    return price / quantity;
-                }
+                return (unit.equals("g") || unit.equals("ml")) ? (price / quantity) * 1000 : price / quantity;
             }
         } catch (Exception e) { return price; }
         return price;
