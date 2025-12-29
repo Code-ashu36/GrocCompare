@@ -1,16 +1,23 @@
-function quickSearch(itemQuery) {
-    const input = document.getElementById('item-search');
-    if (input) {
-        input.value = itemQuery;
-        document.getElementById('search-btn')?.click();
-    }
-}
+/**
+ * GrocCompare Pro - Main Application Logic
+ * Modern Premium UI Implementation
+ */
 
+// Global State
+let currentCategory = 'grocery'; // Default category for the switch bar
+let searchHistory = [];
+
+/**
+ * 1. View Controller
+ * Switches between the Comparison Search and the Budget Assistant
+ */
 function switchView(viewId) {
     const compareView = document.getElementById('comparison-view');
     const budgetAsst = document.getElementById('budget-assistant'); 
     const sidebar = document.getElementById('shortcuts-sidebar');
     
+    if (!compareView || !budgetAsst) return;
+
     if (viewId === 'budget') {
         compareView.style.display = 'none';
         budgetAsst.style.display = 'block';
@@ -21,95 +28,176 @@ function switchView(viewId) {
         if (sidebar) sidebar.style.display = 'block';
     }
 
-    document.querySelectorAll('.header nav a').forEach(link => {
-        link.classList.toggle('active-link', link.id === `nav-${viewId}`);
+    // Update Navigation UI
+    const navLinks = document.querySelectorAll('.header nav a');
+    navLinks.forEach(link => {
+        link.classList.remove('active-link');
+        if (link.id === `nav-${viewId}`) link.classList.add('active-link');
     });
 }
 
-async function getSearchResults(query) {
-    const loader = document.getElementById('loader');
-    const location = document.getElementById('location-picker').value;
-    document.getElementById('loader-text').textContent = `Fetching live prices for ${location}...`;
-    loader?.classList.remove('hidden');
-
-    try {
-        const response = await fetch(`/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`);
-        const data = await response.json();
-        loader?.classList.add('hidden');
-        return data;
-    } catch (error) {
-        loader?.classList.add('hidden');
-        return null;
+/**
+ * 2. Quick Search Handler
+ * Triggered by the pill-shaped buttons in the Hero section
+ */
+function quickSearch(itemQuery) {
+    const input = document.getElementById('item-search');
+    if (input) {
+        input.value = itemQuery;
+        performSearch(); // Trigger the main search logic
     }
 }
 
+/**
+ * 3. Main Search Execution
+ * Fetches data from the Java Backend
+ */
+async function performSearch() {
+    const input = document.getElementById('item-search');
+    const query = input.value;
+    const location = document.getElementById('location-picker').value;
+    const loader = document.getElementById('loader');
+    const loaderText = document.getElementById('loader-text');
+
+    if (!query) return;
+
+    // Show Loader with Premium Feedback
+    if (loaderText) loaderText.textContent = `Analyzing market prices in ${location}...`;
+    if (loader) loader.classList.remove('hidden');
+
+    try {
+        // Updated Fetch to include category parameter for functional switching
+        const response = await fetch(`/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&category=${currentCategory}`);
+        const data = await response.json();
+        
+        renderResults(data);
+    } catch (error) {
+        console.error("Search failed:", error);
+        const summaryContainer = document.getElementById('results-summary');
+        if (summaryContainer) summaryContainer.innerHTML = "Unable to fetch live prices. Please try again.";
+    } finally {
+        if (loader) loader.classList.add('hidden');
+    }
+}
+
+/**
+ * 4. Results Rendering
+ * Builds the Premium White Card Grid
+ */
 function renderResults(data) {
     const resultsContainer = document.getElementById('comparison-results');
     const summaryContainer = document.getElementById('results-summary');
+    
+    if (!resultsContainer) return;
     resultsContainer.innerHTML = ''; 
 
-    if (!data?.comparisonResults?.length) {
-        summaryContainer.style.display = 'block';
-        summaryContainer.innerHTML = "No results found.";
+    // Handle Empty Results
+    if (!data || !data.comparisonResults || data.comparisonResults.length === 0) {
+        if (summaryContainer) {
+            summaryContainer.innerHTML = "No products found matching your search.";
+        }
         return;
     }
 
-    summaryContainer.style.display = 'block';
-    summaryContainer.innerHTML = `✅ Found ${data.comparisonResults.length} deals. Best: ${data.globalBestDeal.platformId} (₹${data.globalBestDeal.price.toFixed(2)})`;
+    // Update Summary with Best Deal Info
+    if (summaryContainer) {
+        summaryContainer.innerHTML = `Found <strong>${data.comparisonResults.length}</strong> results. Best deal at <strong>${data.globalBestDeal.platformId}</strong>.`;
+    }
 
+    // Create Cards
     data.comparisonResults.forEach(product => {
-        const unitPrice = product.normalizedPrice?.toFixed(2) || product.currentPrice.toFixed(2);
+        const unitPrice = product.normalizedPrice ? product.normalizedPrice.toFixed(2) : product.currentPrice.toFixed(2);
         const finalLink = product.productLink || "#";
         const isValid = finalLink !== "#";
 
-        let badgeColor = "#FFC107"; let badgeText = "Fair Price";
-        if (product.priceStatus === "Low") { badgeColor = "#4CAF50"; badgeText = "Great Deal"; }
-        else if (product.priceStatus === "High") { badgeColor = "#F44336"; badgeText = "High Price"; }
+        // Logic for "Best Deal" vs "Standard" tag
+        let tagClass = "deal-tag";
+        let badgeText = "Fair Price";
+        if (product.priceStatus === "Low") { 
+            tagClass += " best-deal"; 
+            badgeText = "Best Price"; 
+        } else if (product.priceStatus === "High") {
+            badgeText = "Premium Price";
+        }
 
         const card = `
             <div class="product-card">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                    <h3 style="margin:0;">${product.platformId}</h3>
-                    <span style="background: ${badgeColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7em; font-weight: bold;">${badgeText}</span>
-                </div>
-                <p><strong>${product.productName}</strong></p>
-                <p>Price: <span style="font-size: 1.2em; color: var(--success-color); font-weight: bold;">₹${product.currentPrice.toFixed(2)}</span></p>
-                <p style="color: #777; font-size: 0.8em; margin-bottom: 15px;">Rate: ₹${unitPrice} per kg/L</p>
-                <a href="${finalLink}" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
-                    <button class="buy-btn" ${!isValid ? 'disabled style="opacity:0.5;"' : ''}>
-                        ${isValid ? 'Buy Now' : 'Link Unavailable'}
-                    </button>
+                <span class="${tagClass}">${badgeText} • ${product.platformId}</span>
+                <h3>${product.productName}</h3>
+                <p class="price">₹${product.currentPrice.toFixed(2)}</p>
+                <p class="rate">Rate: ₹${unitPrice} per kg/L</p>
+                <a href="${finalLink}" target="_blank" rel="noopener noreferrer" class="buy-btn">
+                    ${isValid ? 'Compare Prices' : 'Check Store'}
                 </a>
-            </div>`;
+            </div>
+        `;
         resultsContainer.insertAdjacentHTML('beforeend', card);
     });
 }
 
+/**
+ * 5. Budget Assistant Logic
+ * Provides the AI Coach strategy
+ */
 function handleCalculateBudget() {
     const budget = parseInt(document.getElementById('monthly-budget').value);
     const size = parseInt(document.getElementById('household-size').value);
-    const perPerson = budget / size;
     const resultsBox = document.getElementById('budget-results');
+    
+    if (!resultsBox) return;
 
+    const perPerson = budget / size;
     let strategy = perPerson < 3500 ? 
-        `<li><strong>Buy Bulk:</strong> 5kg packs save ~15%.</li><li><strong>Store Brands:</strong> Switch to 'Fresho' for 20% off.</li>` : 
-        `<li><strong>Value Packs:</strong> Buy boxes of 6+ to lower unit price.</li><li><strong>Weekly Sales:</strong> Check rates on Mondays.</li>`;
+        `<li><strong>Bulk Buying:</strong> Focus on 5kg+ packs for staples.</li>
+         <li><strong>Local Brands:</strong> Switch to in-house labels for 20% savings.</li>` : 
+        `<li><strong>Premium Selection:</strong> Compare high-end brands for seasonal offers.</li>
+         <li><strong>Subscription Benefits:</strong> Use loyalty points for delivery fee waivers.</li>`;
 
-    resultsBox.style.backgroundColor = perPerson < 3500 ? "#F44336" : "#4CAF50";
-    resultsBox.innerHTML = `<h3 style="color: white;">✅ AI Coach Strategy</h3><p style="color: white;">₹${Math.round(perPerson)} per person</p><ul style="text-align: left; margin-top: 15px; color: white;">${strategy}</ul>`;
+    resultsBox.style.background = "#f9f9f9";
+    resultsBox.style.color = "#333";
+    resultsBox.style.border = "1px solid #eee";
+    
+    resultsBox.innerHTML = `
+        <h3 style="margin-bottom:10px;">✅ AI Coach Strategy</h3>
+        <p>Budget: ₹${budget} | ~₹${Math.round(perPerson)} per person</p>
+        <ul style="text-align: left; margin-top: 15px; padding-left:20px;">${strategy}</ul>
+    `;
 }
 
+/**
+ * 6. Initialization
+ * Sets up Event Listeners
+ */
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('nav-compare').onclick = () => switchView('compare');
-    document.getElementById('nav-budget').onclick = () => switchView('budget');
-    document.getElementById('calculate-budget-btn').onclick = handleCalculateBudget;
-    document.getElementById('dark-mode-toggle').onclick = () => document.body.classList.toggle('dark-mode');
-    
+    // Initial View
+    switchView('compare'); 
+
+    // Search Button Click
     const searchBtn = document.getElementById('search-btn');
+    if (searchBtn) {
+        searchBtn.onclick = performSearch;
+    }
+
+    // Search on Enter Key
     const searchInput = document.getElementById('item-search');
-    
-    searchBtn.onclick = async () => {
-        const data = await getSearchResults(searchInput.value);
-        if (data) renderResults(data);
-    };
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+    }
+
+    // Budget Assistant Button
+    const budgetBtn = document.getElementById('calculate-budget-btn');
+    if (budgetBtn) {
+        budgetBtn.onclick = handleCalculateBudget;
+    }
+
+    // Theme Toggle (Kept for future dark mode functionality)
+    const themeBtn = document.getElementById('dark-mode-toggle');
+    if (themeBtn) {
+        themeBtn.onclick = () => document.body.classList.toggle('dark-mode');
+    }
 });
