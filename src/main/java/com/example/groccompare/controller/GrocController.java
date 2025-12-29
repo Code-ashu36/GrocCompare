@@ -17,7 +17,6 @@ import java.util.regex.Pattern;
 @Controller
 public class GrocController {
 
-    // Pulls the key securely from Railway Variables
     @Value("${SERPAPI_KEY}")
     private String API_KEY;
 
@@ -33,7 +32,6 @@ public class GrocController {
         List<Product> results = new ArrayList<>();
 
         try {
-            // Encode spaces for the URL
             String encodedQuery = query.replace(" ", "+");
             String encodedLocation = location.replace(" ", "+");
             
@@ -52,7 +50,6 @@ public class GrocController {
                 JSONArray shoppingResults = jsonResponse.getJSONArray("shopping_results");
                 int count = Math.min(shoppingResults.length(), 10);
                 
-                // Calculate average price for trend badges
                 double totalSum = 0;
                 for (int i = 0; i < count; i++) {
                     totalSum += shoppingResults.getJSONObject(i).optDouble("extracted_price", 0.0);
@@ -63,18 +60,11 @@ public class GrocController {
                     JSONObject item = shoppingResults.getJSONObject(i);
                     double currentItemPrice = item.optDouble("extracted_price", 0.0);
                     String title = item.optString("title", "Unknown Product");
+                    String imageUrl = item.optString("thumbnail", "https://via.placeholder.com/150");
 
-                    // CRITICAL FIX: Get the direct merchant redirect link
-                    // We check 'link' first (merchant), then 'product_link' (google page) as backup
                     String rawLink = item.optString("link", item.optString("product_link", ""));
-                    
-                    String absoluteLink = "#";
-                    if (!rawLink.isEmpty()) {
-                        // Force HTTPS to prevent browser blocks on Railway
-                        absoluteLink = rawLink.startsWith("http") ? rawLink : "https://" + rawLink;
-                    }
+                    String absoluteLink = rawLink.isEmpty() ? "#" : (rawLink.startsWith("http") ? rawLink : "https://" + rawLink);
 
-                    // Assign "Great Deal" logic
                     String status = "Average";
                     if (averagePrice > 0) {
                         if (currentItemPrice < (averagePrice * 0.9)) status = "Low";
@@ -82,14 +72,9 @@ public class GrocController {
                     }
 
                     results.add(new Product(
-                        String.valueOf(i), 
-                        title, 
-                        item.optString("source", "Unknown Store"), 
-                        currentItemPrice, 
-                        currentItemPrice,
-                        calculateNormalizedPrice(title, currentItemPrice),
-                        absoluteLink,
-                        status
+                        String.valueOf(i), title, item.optString("source", "Unknown Store"), 
+                        currentItemPrice, currentItemPrice, calculateNormalizedPrice(title, currentItemPrice),
+                        absoluteLink, status, imageUrl
                     ));
                 }
             }

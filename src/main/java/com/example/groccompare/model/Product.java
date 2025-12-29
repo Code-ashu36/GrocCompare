@@ -8,5 +8,6 @@ public record Product(
     double currentPrice,
     double normalizedPrice,
     String productLink,
-    String priceStatus // NEW: Holds "Low", "Average", or "High"
+    String priceStatus,
+    String imageUrl // Added for product thumbnails
 ) {}
