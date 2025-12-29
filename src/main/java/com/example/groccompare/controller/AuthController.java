@@ -30,15 +30,16 @@ public class AuthController {
 
     // Use @ModelAttribute to map form fields to the User object
     @PostMapping("/register")
-    public String registerUser(@ModelAttribute User user) {
-        try {
-            // Encrypt password before saving
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            userRepository.save(user);
-            return "redirect:/login?success";
-        } catch (Exception e) {
-            // If it hangs here, check your Railway MongoDB connection logs
-            return "redirect:/register?error";
-        }
+public String registerUser(@ModelAttribute User user) {
+    try {
+        // Encrypt password before saving
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userRepository.save(user);
+        System.out.println("Successfully saved user: " + user.getUsername());
+        return "redirect:/login?success";
+    } catch (Exception e) {
+        e.printStackTrace(); // This will show the exact error in Railway Logs
+        return "redirect:/register?error";
     }
+}
 }
