@@ -21,7 +21,7 @@ public class GrocController {
     private String API_KEY;
 
     // Use the same API key if it's a Google key, or add a new one for Gemini
-    @Value("${SERPAPI_KEY}") 
+    @Value("${GEMINI_API_KEY}") 
     private String GEMINI_API_KEY;
 
     @GetMapping("/")
