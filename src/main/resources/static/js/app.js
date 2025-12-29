@@ -1,202 +1,158 @@
 /**
- * GrocCompare Pro - Main Application Logic
- * Fixed Functionality for Minimalist UI
+ * GrocCompare Pro - Premium Minimal Logic
  */
 
-// 1. Splash Screen Management
+// 1. Splash Screen Fade Logic
 window.addEventListener('load', () => {
+    // Artificial delay to show premium splash
     setTimeout(() => {
         const splash = document.getElementById('splash-screen');
         if (splash) {
             splash.style.opacity = '0';
-            setTimeout(() => splash.classList.add('hidden'), 800);
+            setTimeout(() => {
+                splash.classList.add('hidden');
+            }, 1000);
         }
-    }, 2000); // 2-second splash
+    }, 2800); 
 });
 
-// 2. Global State & Wishlist
-let wishlist = JSON.parse(localStorage.getItem('grocWishlist')) || [];
+// 2. Global State & Initialization
+let currentView = 'compare';
 
-// 3. View Switcher Logic
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Theme from LocalStorage
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+
+    // Event Listeners
+    document.getElementById('search-btn').addEventListener('click', performSearch);
+    document.getElementById('dark-mode-toggle').addEventListener('click', toggleTheme);
+    
+    document.getElementById('item-search').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') performSearch();
+    });
+
+    renderWishlist();
+});
+
+// 3. Theme Management (Fixed Contrast)
+function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+}
+
+// 4. View Management
 function switchView(viewId) {
-    const compareView = document.getElementById('comparison-view');
-    const budgetAsst = document.getElementById('budget-assistant');
-    const hero = document.getElementById('hero-section');
-    const navCompare = document.getElementById('nav-compare');
-    const navBudget = document.getElementById('nav-budget');
+    const compareSection = document.getElementById('comparison-view');
+    const budgetSection = document.getElementById('budget-assistant');
+    const heroSection = document.querySelector('.premium-hero');
+
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
 
     if (viewId === 'budget') {
-        compareView.classList.add('hidden');
-        budgetAsst.classList.remove('hidden');
-        hero.classList.add('hidden'); // Hide hero to focus on budget
-        navBudget.classList.add('active');
-        navCompare.classList.remove('active');
+        compareSection.classList.add('hidden');
+        budgetSection.classList.remove('hidden');
+        heroSection.classList.add('hidden');
+        document.getElementById('nav-budget').classList.add('active');
     } else {
-        compareView.classList.remove('hidden');
-        budgetAsst.classList.add('hidden');
-        hero.classList.remove('hidden');
-        navCompare.classList.add('active');
-        navBudget.classList.remove('active');
+        compareSection.classList.remove('hidden');
+        budgetSection.classList.add('hidden');
+        heroSection.classList.remove('hidden');
+        document.getElementById('nav-compare').classList.add('active');
     }
 }
 
-// 4. Header Search Functionality
+// 5. Header Search Link
 function handleHeaderSearch(event) {
     if (event.key === 'Enter') {
-        const headerVal = document.getElementById('header-query').value;
-        if (headerVal) {
-            document.getElementById('item-search').value = headerVal;
-            performSearch();
-        }
+        const val = document.getElementById('header-query').value;
+        document.getElementById('item-search').value = val;
+        performSearch();
     }
 }
 
-// 5. Quick Search (Pills)
-function quickSearch(itemQuery) {
-    const mainInput = document.getElementById('item-search');
-    mainInput.value = itemQuery;
+function quickSearch(item) {
+    document.getElementById('item-search').value = item;
     performSearch();
 }
 
-// 6. Main Search Logic (Comparison Engine)
+// 6. Backend API Interaction
 async function performSearch() {
     const query = document.getElementById('item-search').value;
     const location = document.getElementById('location-picker').value;
     const loader = document.getElementById('loader');
     const grid = document.getElementById('comparison-results');
-    const summary = document.getElementById('results-summary');
 
     if (!query) return;
 
-    // Ensure we are in comparison view
+    // UI state
     switchView('compare');
-
-    // UI Feedback
-    if (loader) loader.classList.remove('hidden');
+    loader.classList.remove('hidden');
     grid.innerHTML = '';
-    summary.style.display = 'none';
 
     try {
         const response = await fetch(`/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`);
         const data = await response.json();
         
-        if (loader) loader.classList.add('hidden');
         renderResults(data);
     } catch (error) {
-        if (loader) loader.classList.add('hidden');
-        console.error("Search failed:", error);
+        console.error("Fetch failed", error);
+    } finally {
+        loader.classList.add('hidden');
     }
 }
 
+// 7. Results Rendering (Ultra-Clean Card)
 function renderResults(data) {
     const grid = document.getElementById('comparison-results');
     const summary = document.getElementById('results-summary');
-    
-    if (!data || !data.comparisonResults || data.comparisonResults.length === 0) {
-        summary.style.display = 'block';
-        summary.innerHTML = "No live deals found. Try another product.";
+
+    if (!data.comparisonResults || data.comparisonResults.length === 0) {
+        summary.innerHTML = "No products found.";
         return;
     }
 
-    summary.style.display = 'block';
-    summary.innerHTML = `Found <strong>${data.comparisonResults.length}</strong> deals. Best: ${data.globalBestDeal.platformId} (₹${data.globalBestDeal.currentPrice})`;
+    summary.innerHTML = `Found ${data.comparisonResults.length} market deals. Best: ${data.globalBestDeal.platformId}`;
 
-    data.comparisonResults.forEach(product => {
-        const isBest = product.priceStatus === 'Low';
+    data.comparisonResults.forEach(p => {
         const card = `
             <div class="product-card">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span class="deal-tag ${isBest ? 'best-deal' : ''}">
-                        ${isBest ? 'Best Deal' : 'Market Price'} • ${product.platformId}
-                    </span>
-                    <span class="icon" onclick="addToWishlist('${product.productName.replace(/'/g, "\\'")}', ${product.currentPrice})" style="cursor:pointer; opacity:0.4;">♡</span>
-                </div>
-                <h3>${product.productName}</h3>
-                <p class="price">₹${product.currentPrice.toFixed(2)} <span class="history-trigger" title="Price Trend">📈</span></p>
-                <p class="rate">Rate: ₹${product.normalizedPrice.toFixed(2)}/unit</p>
-                <a href="${product.productLink}" target="_blank" class="buy-btn">Compare Prices</a>
+                <div class="best-deal-tag">${p.platformId}</div>
+                <h3>${p.productName}</h3>
+                <p class="price">₹${p.currentPrice.toFixed(2)}</p>
+                <p class="rate">₹${p.normalizedPrice.toFixed(2)} per unit</p>
+                <a href="${p.productLink}" target="_blank" class="compare-outline-btn">Compare Price</a>
             </div>`;
         grid.insertAdjacentHTML('beforeend', card);
     });
 }
 
-// 7. Wishlist Operations
-function addToWishlist(name, price) {
-    if (!wishlist.find(i => i.name === name)) {
-        wishlist.push({ name, price });
-        localStorage.setItem('grocWishlist', JSON.stringify(wishlist));
-        renderWishlist();
-        alert("Added to saved items!");
-    }
-}
-
-function removeFromWishlist(name) {
-    wishlist = wishlist.filter(i => i.name !== name);
-    localStorage.setItem('grocWishlist', JSON.stringify(wishlist));
-    renderWishlist();
-}
-
-function renderWishlist() {
-    const container = document.getElementById('wishlist-items');
-    if (wishlist.length === 0) {
-        container.innerHTML = '<p style="font-size:0.8rem; color:#aaa;">No items saved.</p>';
-        return;
-    }
-    container.innerHTML = wishlist.map(item => `
-        <div class="wish-item">
-            <div>${item.name.substring(0, 18)}...<br><strong>₹${item.price}</strong></div>
-            <div class="remove-wish" onclick="removeFromWishlist('${item.name.replace(/'/g, "\\'")}')">REMOVE</div>
-        </div>
-    `).join('');
-}
-
-function toggleWishlist() {
-    const box = document.getElementById('wishlist-container');
-    box.classList.toggle('hidden');
-}
-
-// 8. Budget Assistant Logic
+// 8. Budget Assistant Strategy
 function handleCalculateBudget() {
     const budget = document.getElementById('monthly-budget').value;
     const size = document.getElementById('household-size').value;
-    const resultsBox = document.getElementById('budget-results');
+    const resultDiv = document.getElementById('budget-results');
 
     if (!budget || !size) return;
-    const perPerson = budget / size;
+    const ppp = Math.round(budget / size);
 
-    resultsBox.innerHTML = `
-        <h3 style="margin-bottom:10px;">✅ AI Strategy (₹${budget})</h3>
-        <p>Target: ₹${Math.round(perPerson)} per person/month.</p>
-        <ul style="margin-top:10px; padding-left:20px; text-align:left;">
-            <li><strong>Bulk Buying:</strong> Buy staples (Atta, Sugar) in 10kg+ packs to lower unit price.</li>
-            <li><strong>Store Swap:</strong> Use the Comparison Engine daily for Milk and Vegetables.</li>
-            <li><strong>Brand Neutrality:</strong> Switch to store labels (e.g., BigBasket Popular) for 20% savings.</li>
-        </ul>`;
+    resultDiv.innerHTML = `
+        <div class="premium-card" style="background:#f9f9f9; padding:20px; border-radius:15px; margin-top:20px;">
+            <h4>Monthly Strategy: ₹${ppp} per person</h4>
+            <ul style="margin-top:15px; text-align:left; padding-left:20px; font-size:0.9rem; color:#555;">
+                <li>Switch to store brands for staples to save up to 20%.</li>
+                <li>Compare Milk and Oil daily as these have high price volatility.</li>
+            </ul>
+        </div>
+    `;
 }
 
-// 9. Initializers
-document.addEventListener('DOMContentLoaded', () => {
-    renderWishlist();
-    
-    // Main Search Click
-    const searchBtn = document.getElementById('search-btn');
-    if (searchBtn) searchBtn.onclick = performSearch;
-
-    // Main Search Enter Key
-    const mainInput = document.getElementById('item-search');
-    if (mainInput) {
-        mainInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') performSearch();
-        });
-    }
-
-    // Budget Calculate Click
-    const calcBtn = document.getElementById('calculate-budget-btn');
-    if (calcBtn) calcBtn.onclick = handleCalculateBudget;
-
-    // Dark Mode Toggle
-    const themeBtn = document.getElementById('dark-mode-toggle');
-    if (themeBtn) {
-        themeBtn.onclick = () => document.body.classList.toggle('dark-mode');
-    }
-});
+// Placeholder for Wishlist
+function renderWishlist() {
+    // Basic implementation for the sidebar box
+}
+function toggleWishlist() {
+    document.getElementById('wishlist-container').classList.toggle('hidden');
+}
