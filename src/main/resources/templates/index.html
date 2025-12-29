@@ -3,59 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GrocCompare Pro – All-in-One Savings</title>
+    <title>GrocCompare Pro | All-in-One</title>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-    <header class="header">
-        <div class="logo">🛒 GrocCompare<span>Pro</span></div>
-        <nav>
-            <div class="category-toggle">
-                <button class="cat-btn active" onclick="switchCategory('grocery')">Grocery</button>
-                <button class="cat-btn" onclick="switchCategory('cabs')">Cabs</button>
-                <button class="cat-btn" onclick="switchCategory('appliances')">Appliances</button>
-                <button class="cat-btn" onclick="switchCategory('subscriptions')">Subscriptions</button>
+    <header class="glass-header">
+        <div class="top-nav">
+            <div class="logo">🚀 GrocCompare<span>Pro</span></div>
+            <div class="nav-controls">
+                <button id="dark-mode-toggle">🌓</button>
+                <button class="login-btn">Login</button>
             </div>
-            <a href="javascript:void(0)" id="nav-budget">Budget Asst.</a>
-            <button id="dark-mode-toggle">🌙</button>
-        </nav>
+        </div>
+        <div class="category-wrapper">
+            <button class="cat-btn active" onclick="switchCategory('grocery', this)">Grocery</button>
+            <button class="cat-btn" onclick="switchCategory('cabs', this)">Cabs</button>
+            <button class="cat-btn" onclick="switchCategory('appliances', this)">Appliances</button>
+            <button class="cat-btn" onclick="switchCategory('subscriptions', this)">Plans</button>
+        </div>
     </header>
 
-    <main class="container">
-        <section id="comparison-view">
-            <div class="search-area">
+    <div class="layout-container">
+        <aside class="sidebar">
+            <h3>Recent Searches</h3>
+            <div id="history-list">
+                <p class="empty-msg">No history yet.</p>
+            </div>
+        </aside>
+
+        <main class="content-main">
+            <div class="search-bar-container">
                 <select id="location-picker">
                     <option value="Delhi">Delhi</option>
                     <option value="Mumbai">Mumbai</option>
                     <option value="Bangalore">Bangalore</option>
                 </select>
-                <input type="text" id="item-search" placeholder="What are you comparing today?">
-                <button id="search-btn">Search</button>
+                <input type="text" id="item-search" placeholder="Search for groceries...">
+                <button id="search-btn">Compare</button>
             </div>
-            <div id="results-summary" class="summary-box" style="display: none;"></div>
+
             <div id="loader" class="hidden"><div class="spinner"></div></div>
             <section id="comparison-results" class="comparison-grid"></section>
-        </section>
+        </main>
+    </div>
 
-        <section id="budget-assistant" class="hidden-section">
-            <h2>💸 Smart Budget Coach</h2>
-            <div class="budget-input-area">
-                <input type="number" id="monthly-budget" placeholder="Monthly Budget (₹)">
-                <input type="number" id="household-size" placeholder="Family Size">
-                <button id="calculate-budget-btn">Strategy</button>
-            </div>
-            <div id="budget-results" class="recommendation-box"></div>
-        </section>
-    </main>
-
-    <footer class="footer">
-        <div class="footer-content">
-            <p>&copy; 2025 GrocCompare Pro. Comparing Prices, Saving Millions.</p>
-            <div class="footer-links">
-                <a href="#">Privacy</a> | <a href="#">API Documentation</a> | <a href="#">History</a>
-            </div>
-        </div>
+    <footer class="glass-footer">
+        <p>&copy; 2025 GrocCompare Pro. Intelligent Price Discovery.</p>
     </footer>
+
     <script src="/js/app.js"></script>
 </body>
 </html>
