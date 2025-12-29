@@ -20,7 +20,7 @@ public class GrocController {
     @Value("${SERPAPI_KEY}")
     private String API_KEY;
 
-    // Use the same API key if it's a Google key, or add a new one for Gemini
+    // Pulls the real Gemini key securely from your Railway/Environment variables
     @Value("${GEMINI_API_KEY}") 
     private String GEMINI_API_KEY;
 
@@ -76,17 +76,18 @@ public class GrocController {
         return response;
     }
 
-    // --- NEW: AI Chatbot Endpoint ---
+    // --- UPDATED: AI Chatbot Endpoint using the dedicated Gemini Key ---
     @PostMapping("/chat")
     @ResponseBody
     public Map<String, String> chat(@RequestBody Map<String, String> payload) {
         String userMsg = payload.get("message");
+        // Integration with Gemini 1.5 Flash for fast, efficient responses
         String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY;
         
         try {
             JSONObject body = new JSONObject();
             JSONArray contents = new JSONArray();
-            JSONObject part = new JSONObject().put("text", "You are a grocery savings expert. Help the user: " + userMsg);
+            JSONObject part = new JSONObject().put("text", "You are a grocery savings expert. Help the user find deals and budget better based on: " + userMsg);
             contents.put(new JSONObject().put("parts", new JSONArray().put(part)));
             body.put("contents", contents);
 
@@ -99,6 +100,8 @@ public class GrocController {
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             JSONObject resJson = new JSONObject(response.body());
+            
+            // Extract the generated text from the Gemini response structure
             String aiReply = resJson.getJSONArray("candidates")
                                    .getJSONObject(0)
                                    .getJSONObject("content")
@@ -108,7 +111,7 @@ public class GrocController {
 
             return Map.of("reply", aiReply);
         } catch (Exception e) {
-            return Map.of("reply", "Error connecting to Gemini. Please check your API key.");
+            return Map.of("reply", "The AI is currently unavailable. Please ensure your GEMINI_API_KEY is correctly set in Railway.");
         }
     }
 

@@ -9,5 +9,5 @@ public record Product(
     double normalizedPrice,
     String productLink,
     String priceStatus,
-    String imageUrl
+    String imageUrl // Added for image rendering
 ) {}

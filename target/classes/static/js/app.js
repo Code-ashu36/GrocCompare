@@ -100,11 +100,11 @@ async function sendChatMessage() {
         });
         const data = await response.json();
         
-        // Show AI Message
+        // Show AI Message using the premium pastel accent
         msgBox.insertAdjacentHTML('beforeend', `<div class="pill-btn accent-purple" style="margin-bottom:10px; width:fit-content; border:none; color:inherit;">${data.reply}</div>`);
         msgBox.scrollTop = msgBox.scrollHeight;
     } catch (err) {
-        msgBox.insertAdjacentHTML('beforeend', `<div style="color:red; font-size:0.8rem; margin-bottom:10px;">Chat error. Try again.</div>`);
+        msgBox.insertAdjacentHTML('beforeend', `<div style="color:red; font-size:0.8rem; margin-bottom:10px;">Chat error. Please try again.</div>`);
     }
 }
 
