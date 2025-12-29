@@ -20,7 +20,6 @@ public class GrocController {
     @Value("${SERPAPI_KEY}")
     private String API_KEY;
 
-    // This MUST match the name in your Railway dashboard
     @Value("${GEMINI_API_KEY}") 
     private String GEMINI_API_KEY;
 
@@ -76,20 +75,22 @@ public class GrocController {
         return response;
     }
 
+    // --- UPDATED: AI Chatbot Endpoint with Enhanced Error Reporting ---
     @PostMapping("/chat")
     @ResponseBody
     public Map<String, String> chat(@RequestBody Map<String, String> payload) {
         String userMsg = payload.get("message");
         
-        // Security check for the key
+        // 1. Check if the environment variable is actually loaded
         if (GEMINI_API_KEY == null || GEMINI_API_KEY.isEmpty()) {
-            return Map.of("reply", "Error: GEMINI_API_KEY variable is missing in Railway settings.");
+            System.err.println("ERROR: GEMINI_API_KEY is null or empty in GrocController.");
+            return Map.of("reply", "System Config Error: GEMINI_API_KEY not found in Railway.");
         }
 
         String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY;
         
         try {
-            // Updated JSON structure for Gemini 1.5
+            // Constructing the Gemini-specific JSON structure
             JSONObject body = new JSONObject();
             JSONArray contents = new JSONArray();
             JSONObject part = new JSONObject().put("text", "You are the GrocCompare AI assistant. Help the user save money on groceries. User asks: " + userMsg);
@@ -103,10 +104,22 @@ public class GrocController {
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                 .build();
 
+            // 2. Execute the request and capture the response
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            
+            // 3. LOG THE FULL RESPONSE to Railway for your inspection
+            System.out.println("FULL Gemini API Raw Response: " + response.body());
+
             JSONObject resJson = new JSONObject(response.body());
             
-            // Precise navigation of Gemini's response object
+            // 4. Check for API-level errors (Invalid Key, Quota Exceeded, etc.)
+            if (resJson.has("error")) {
+                String errorMsg = resJson.getJSONObject("error").getString("message");
+                System.err.println("Gemini API returned an error: " + errorMsg);
+                return Map.of("reply", "AI Service Error: " + errorMsg);
+            }
+            
+            // 5. Navigate the JSON tree to get the text
             String aiReply = resJson.getJSONArray("candidates")
                                    .getJSONObject(0)
                                    .getJSONObject("content")
@@ -116,8 +129,10 @@ public class GrocController {
 
             return Map.of("reply", aiReply);
         } catch (Exception e) { 
+            // 6. Log the specific Java exception stack trace
+            System.err.println("Java Exception in Chat Method: " + e.getMessage());
             e.printStackTrace(); 
-            return Map.of("reply", "AI Error: Check Railway logs for details. Mismatched key or API quota exceeded."); 
+            return Map.of("reply", "AI Error: Check Railway logs for the stack trace. Details: " + e.getMessage()); 
         }
     }
 
