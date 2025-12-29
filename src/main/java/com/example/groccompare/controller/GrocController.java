@@ -21,35 +21,27 @@ public class GrocController {
     private String API_KEY;
 
     @GetMapping("/")
-    public String index() { 
-        return "index"; 
-    }
+    public String index() { return "index"; }
 
     @GetMapping("/search")
     @ResponseBody
     public Map<String, Object> search(@RequestParam String query, @RequestParam(defaultValue = "Delhi") String location) {
         Map<String, Object> response = new HashMap<>();
         List<Product> results = new ArrayList<>();
-
         try {
             String encodedQuery = query.replace(" ", "+");
             String encodedLocation = location.replace(" ", "+");
-            
-            String searchUrl = "https://serpapi.com/search.json?engine=google_shopping&q=" 
-                                + encodedQuery 
-                                + "&location=" + encodedLocation + ",+India"
-                                + "&gl=in&hl=en&api_key=" + API_KEY;
+            String searchUrl = "https://serpapi.com/search.json?engine=google_shopping&q=" + encodedQuery 
+                                + "&location=" + encodedLocation + ",+India&gl=in&hl=en&api_key=" + API_KEY;
 
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(searchUrl)).build();
-            
             HttpResponse<String> apiResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
             JSONObject jsonResponse = new JSONObject(apiResponse.body());
 
             if (jsonResponse.has("shopping_results")) {
                 JSONArray shoppingResults = jsonResponse.getJSONArray("shopping_results");
                 int count = Math.min(shoppingResults.length(), 10);
-                
                 double totalSum = 0;
                 for (int i = 0; i < count; i++) {
                     totalSum += shoppingResults.getJSONObject(i).optDouble("extracted_price", 0.0);
@@ -60,43 +52,23 @@ public class GrocController {
                     JSONObject item = shoppingResults.getJSONObject(i);
                     double currentItemPrice = item.optDouble("extracted_price", 0.0);
                     String title = item.optString("title", "Unknown Product");
-                    
-                    // Logic to extract image URL from SerpApi
-                    String imageUrl = item.optString("thumbnail", "https://via.placeholder.com/150?text=No+Image");
+                    String imageUrl = item.optString("thumbnail", "https://via.placeholder.com/150");
 
                     String rawLink = item.optString("link", item.optString("product_link", ""));
-                    String absoluteLink = "#";
-                    if (!rawLink.isEmpty()) {
-                        absoluteLink = rawLink.startsWith("http") ? rawLink : "https://" + rawLink;
-                    }
+                    String absoluteLink = rawLink.isEmpty() ? "#" : (rawLink.startsWith("http") ? rawLink : "https://" + rawLink);
 
-                    String status = "Average";
-                    if (averagePrice > 0) {
-                        if (currentItemPrice < (averagePrice * 0.9)) status = "Low";
-                        else if (currentItemPrice > (averagePrice * 1.1)) status = "High";
-                    }
+                    String status = (averagePrice > 0 && currentItemPrice < (averagePrice * 0.9)) ? "Low" : 
+                                   (averagePrice > 0 && currentItemPrice > (averagePrice * 1.1)) ? "High" : "Average";
 
-                    results.add(new Product(
-                        String.valueOf(i), 
-                        title, 
-                        item.optString("source", "Unknown Store"), 
-                        currentItemPrice, 
-                        currentItemPrice,
-                        calculateNormalizedPrice(title, currentItemPrice),
-                        absoluteLink,
-                        status,
-                        imageUrl // Passing the image URL to the model
-                    ));
+                    results.add(new Product(String.valueOf(i), title, item.optString("source", "Unknown Store"), 
+                                          currentItemPrice, currentItemPrice, calculateNormalizedPrice(title, currentItemPrice),
+                                          absoluteLink, status, imageUrl));
                 }
             }
-        } catch (Exception e) {
-            System.err.println("Search Error: " + e.getMessage());
-        }
-
+        } catch (Exception e) { System.err.println("Search Error: " + e.getMessage()); }
         results.sort(Comparator.comparingDouble(Product::normalizedPrice));
         response.put("comparisonResults", results);
         if (!results.isEmpty()) response.put("globalBestDeal", results.get(0));
-        
         return response;
     }
 
@@ -106,9 +78,9 @@ public class GrocController {
             Pattern pattern = Pattern.compile("(\\d+\\.?\\d*)\\s*(kg|g|ml|l)", Pattern.CASE_INSENSITIVE);
             Matcher matcher = pattern.matcher(title);
             if (matcher.find()) {
-                double quantity = Double.parseDouble(matcher.group(1));
+                double qty = Double.parseDouble(matcher.group(1));
                 String unit = matcher.group(2).toLowerCase();
-                return (unit.equals("g") || unit.equals("ml")) ? (price / quantity) * 1000 : price / quantity;
+                return (unit.equals("g") || unit.equals("ml")) ? (price / qty) * 1000 : price / qty;
             }
         } catch (Exception e) { return price; }
         return price;
