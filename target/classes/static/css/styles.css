@@ -1,17 +1,14 @@
-/* --- 1. System Variables --- */
+/* --- 1. System Variables (Keep as is) --- */
 :root {
     --white: #ffffff;
     --grey-100: #f5f5f5;
     --grey-200: #e8e8e8;
     --text-222: #222222;
     --text-555: #555555;
-    
-    /* Pastel Palette */
     --accent-blue: #dbe9ff;
     --accent-purple: #ebe5ff;
     --accent-mint: #e4fff3;
     --accent-beige: #fff4e6;
-    
     --shadow-light: 0 10px 40px rgba(0,0,0,0.03);
 }
 
@@ -19,15 +16,24 @@ body.dark-mode {
     --white: #1a1a1a;
     --grey-100: #121212;
     --grey-200: #252525;
-    --text-222: #f5f5f5; /* High visibility for dark mode */
-    --text-555: #bbbbbb; /* Readable secondary text */
+    --text-222: #f5f5f5;
+    --text-555: #bbbbbb;
     --shadow-light: 0 10px 40px rgba(0,0,0,0.4);
 }
 
+/* --- Smooth Transitions for View Containers --- */
+#comparison-view, #budget-assistant {
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Base styling (Keep all other styles identical) */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text-222); overflow-x: hidden; transition: background 0.3s ease, color 0.3s ease; }
 
-/* --- 2. Splash Screen --- */
+/* ... All other CSS sections remain exactly as provided ... */
+
 #splash-screen {
     position: fixed; top:0; left:0; width:100%; height:100%;
     background: radial-gradient(circle at center, var(--white) 0%, var(--grey-100) 100%);
@@ -39,7 +45,6 @@ body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--
 .loader-ring { width: 40px; height: 40px; border: 2px solid var(--grey-200); border-top: 2px solid var(--text-555); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* --- 3. Header & Hero --- */
 .glass-header {
     background: rgba(var(--white), 0.7); backdrop-filter: blur(15px);
     border-bottom: 1px solid var(--grey-200); position: sticky; top:0; z-index: 900;
@@ -63,18 +68,16 @@ body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--
 .search-trigger { background: var(--text-222); color: var(--white); border: none; padding: 12px 35px; border-radius: 40px; cursor: pointer; font-weight: 600; }
 
 .pill-btn { border: none; padding: 6px 18px; border-radius: 20px; margin: 0 5px; cursor: pointer; transition: 0.3s; font-weight: 500; font-size: 0.85rem; color: var(--text-555); }
-.accent-blue { background: var(--accent-blue); color: #333 !important; } /* Keep accent text dark for readability */
+.accent-blue { background: var(--accent-blue); color: #333 !important; }
 .accent-purple { background: var(--accent-purple); color: #333 !important; }
 .accent-mint { background: var(--accent-mint); color: #333 !important; }
 
-/* --- 4. Sidebar & Layout --- */
 .platform-layout { max-width: 1400px; margin: 50px auto; display: grid; grid-template-columns: 280px 1fr; gap: 40px; padding: 0 40px; }
 .sidebar-panel { background: var(--grey-100); padding: 30px; border-radius: 24px; border: 1px solid var(--grey-200); height: fit-content; }
 .sidebar-panel h4 { color: var(--text-555); font-size: 0.8rem; text-transform: uppercase; margin-bottom: 15px; }
 .nav-link { display: block; width: 100%; text-align: left; padding: 12px; border: none; background: transparent; cursor: pointer; border-radius: 12px; color: var(--text-555); margin-bottom: 5px; }
 .nav-link.active { background: var(--white); color: var(--text-222); font-weight: 600; box-shadow: var(--shadow-light); }
 
-/* --- 5. Product Grid & Card Accents --- */
 .accent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
 
 .product-card {
@@ -83,7 +86,6 @@ body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--
 }
 .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
 
-/* Card Image Block with Accent Backgrounds */
 .card-img-block {
     height: 180px; padding: 20px; display: flex; align-items: center; justify-content: center;
     background: var(--card-accent, var(--accent-blue));
@@ -103,7 +105,6 @@ body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--
 }
 .compare-btn-minimal:hover { background: var(--text-222); color: var(--white); border-color: var(--text-222); }
 
-/* --- 6. Footer --- */
 .footer-premium { background: var(--grey-100); padding: 80px 40px 40px; border-top: 1px solid var(--grey-200); margin-top: 100px; color: var(--text-555); }
 .footer-grid { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 50px; }
 .footer-links h5 { font-size: 0.8rem; text-transform: uppercase; color: var(--text-555); margin-bottom: 20px; letter-spacing: 1px; }
@@ -111,7 +112,6 @@ body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--
 .footer-links a:hover { color: var(--text-222); }
 .footer-bottom { text-align: center; margin-top: 60px; font-size: 0.8rem; color: var(--text-555); opacity: 0.7; }
 
-/* Utilities */
 .hidden { display: none !important; }
 .fade-in { animation: fadeIn 1s ease forwards; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
