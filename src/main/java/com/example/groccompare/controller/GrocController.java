@@ -91,7 +91,7 @@ public class GrocController {
         }
 
         // Correct API endpoint for the v1beta channel
-        String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY;
+        String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_API_KEY;
         
         try {
             // Construct the standard Gemini request body
