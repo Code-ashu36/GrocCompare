@@ -83,7 +83,7 @@ public class GrocController {
         
         // Use v1beta for support of system_instruction
         // Updated model ID to gemini-2.0-flash for stable performance
-        String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY;
+        String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_API_KEY;
         
         try {
             JSONObject body = new JSONObject();
