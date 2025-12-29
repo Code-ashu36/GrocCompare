@@ -1,9 +1,9 @@
 /**
  * GrocCompare Pro | Premium Logic Engine
- * UPDATED: Smooth View Transitions
+ * UPDATED: Smooth View Transitions & Chat Integration
  */
 
-// 1. Splash Screen & Initialization (No changes)
+// 1. Splash Screen & Initialization
 window.addEventListener('load', () => {
     setTimeout(() => {
         const splash = document.getElementById('splash-screen');
@@ -25,6 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('item-search').onkeypress = (e) => {
         if (e.key === 'Enter') performSearch();
     };
+
+    // Chat Enter Listener
+    document.getElementById('chat-input')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendChatMessage();
+    });
+
     const priceSlider = document.querySelector('.accent-range');
     if (priceSlider) {
         priceSlider.addEventListener('input', (e) => {
@@ -33,13 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// 2. FIXED: Smooth View Management with Transition Handlers
+// 2. Smooth View Management
 function switchView(viewId) {
     const compareView = document.getElementById('comparison-view');
     const budgetView = document.getElementById('budget-assistant');
     const hero = document.querySelector('.hero-sky');
 
-    // Step 1: Start Fade Out
     [compareView, budgetView].forEach(el => {
         el.style.opacity = '0';
         el.style.transform = 'translateY(10px)';
@@ -53,8 +58,6 @@ function switchView(viewId) {
             budgetView.classList.remove('hidden');
             if(hero) hero.classList.add('hidden');
             document.getElementById('nav-budget').classList.add('active');
-            
-            // Step 2: Fade In Budget
             setTimeout(() => {
                 budgetView.style.opacity = '1';
                 budgetView.style.transform = 'translateY(0)';
@@ -64,17 +67,48 @@ function switchView(viewId) {
             budgetView.classList.add('hidden');
             if(hero) hero.classList.remove('hidden');
             document.getElementById('nav-compare').classList.add('active');
-            
-            // Step 2: Fade In Compare
             setTimeout(() => {
                 compareView.style.opacity = '1';
                 compareView.style.transform = 'translateY(0)';
             }, 50);
         }
-    }, 300); // Matches CSS transition duration
+    }, 300);
 }
 
-// 3. Search Implementation & 4. Rendering (No changes to logic)
+// --- Chatbot Logic ---
+function toggleChat() {
+    const chat = document.getElementById('chat-box');
+    chat.classList.toggle('hidden');
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const msgBox = document.getElementById('chat-messages');
+    const userMsg = input.value;
+    if (!userMsg) return;
+
+    // Show User Message
+    msgBox.insertAdjacentHTML('beforeend', `<div style="text-align:right; margin-bottom:10px;"><span style="background:var(--grey-100); padding:8px 15px; border-radius:12px; display:inline-block;">${userMsg}</span></div>`);
+    input.value = '';
+    msgBox.scrollTop = msgBox.scrollHeight;
+
+    try {
+        const response = await fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message: userMsg })
+        });
+        const data = await response.json();
+        
+        // Show AI Message
+        msgBox.insertAdjacentHTML('beforeend', `<div class="pill-btn accent-purple" style="margin-bottom:10px; width:fit-content; border:none; color:inherit;">${data.reply}</div>`);
+        msgBox.scrollTop = msgBox.scrollHeight;
+    } catch (err) {
+        msgBox.insertAdjacentHTML('beforeend', `<div style="color:red; font-size:0.8rem; margin-bottom:10px;">Chat error. Try again.</div>`);
+    }
+}
+
+// 3. Search Implementation
 async function performSearch() {
     const query = document.getElementById('item-search').value;
     const location = document.getElementById('location-picker').value;
@@ -139,7 +173,7 @@ function renderResults(data) {
     });
 }
 
-// 5. FIXED: Budget Strategy Card with larger, premium fonts
+// 5. Budget Strategy
 function handleCalculateBudget() {
     const budget = document.getElementById('monthly-budget').value;
     const size = document.getElementById('household-size').value;

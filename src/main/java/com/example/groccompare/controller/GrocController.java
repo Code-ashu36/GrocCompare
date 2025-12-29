@@ -20,6 +20,10 @@ public class GrocController {
     @Value("${SERPAPI_KEY}")
     private String API_KEY;
 
+    // Use the same API key if it's a Google key, or add a new one for Gemini
+    @Value("${SERPAPI_KEY}") 
+    private String GEMINI_API_KEY;
+
     @GetMapping("/")
     public String index() { return "index"; }
 
@@ -70,6 +74,42 @@ public class GrocController {
         response.put("comparisonResults", results);
         if (!results.isEmpty()) response.put("globalBestDeal", results.get(0));
         return response;
+    }
+
+    // --- NEW: AI Chatbot Endpoint ---
+    @PostMapping("/chat")
+    @ResponseBody
+    public Map<String, String> chat(@RequestBody Map<String, String> payload) {
+        String userMsg = payload.get("message");
+        String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY;
+        
+        try {
+            JSONObject body = new JSONObject();
+            JSONArray contents = new JSONArray();
+            JSONObject part = new JSONObject().put("text", "You are a grocery savings expert. Help the user: " + userMsg);
+            contents.put(new JSONObject().put("parts", new JSONArray().put(part)));
+            body.put("contents", contents);
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(geminiUrl))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
+                .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            JSONObject resJson = new JSONObject(response.body());
+            String aiReply = resJson.getJSONArray("candidates")
+                                   .getJSONObject(0)
+                                   .getJSONObject("content")
+                                   .getJSONArray("parts")
+                                   .getJSONObject(0)
+                                   .getString("text");
+
+            return Map.of("reply", aiReply);
+        } catch (Exception e) {
+            return Map.of("reply", "Error connecting to Gemini. Please check your API key.");
+        }
     }
 
     private double calculateNormalizedPrice(String title, double price) {
