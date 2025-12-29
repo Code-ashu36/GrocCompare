@@ -24,9 +24,7 @@ public class GrocController {
     private String GEMINI_API_KEY;
 
     @GetMapping("/")
-    public String index() { 
-        return "index"; 
-    }
+    public String index() { return "index"; }
 
     @GetMapping("/search")
     @ResponseBody
@@ -70,34 +68,40 @@ public class GrocController {
                                           absoluteLink, status, imageUrl));
                 }
             }
-        } catch (Exception e) { 
-            System.err.println("Search Error: " + e.getMessage()); 
-        }
+        } catch (Exception e) { System.err.println("Search Error: " + e.getMessage()); }
         results.sort(Comparator.comparingDouble(Product::normalizedPrice));
         response.put("comparisonResults", results);
         if (!results.isEmpty()) response.put("globalBestDeal", results.get(0));
         return response;
     }
 
-    // --- FIXED: AI Chatbot Endpoint with Correct Model Path ---
+    // --- UPDATED: AI Chatbot Endpoint with Indian Localization ---
     @PostMapping("/chat")
     @ResponseBody
     public Map<String, String> chat(@RequestBody Map<String, String> payload) {
         String userMsg = payload.get("message");
         
-        if (GEMINI_API_KEY == null || GEMINI_API_KEY.isEmpty()) {
-            System.err.println("ERROR: GEMINI_API_KEY is not set.");
-            return Map.of("reply", "System Error: GEMINI_API_KEY missing in Railway variables.");
-        }
-
-        // Correct API endpoint for the v1beta channel
-        String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_API_KEY;
+        // Use v1beta for support of system_instruction
+        // Updated model ID to gemini-2.0-flash for stable performance
+        String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY;
         
         try {
-            // Construct the standard Gemini request body
             JSONObject body = new JSONObject();
+
+            // 1. ADD SYSTEM INSTRUCTION TO FORCE INDIA CONTEXT
+            JSONObject systemInstruction = new JSONObject();
+            systemInstruction.put("parts", new JSONArray().put(new JSONObject().put("text", 
+                "You are an Indian Grocery Savings Expert. " +
+                "1. Always provide prices in Indian Rupees (₹). " +
+                "2. Focus only on Indian retailers like BigBasket, Blinkit, Zepto, Swiggy Instamart, and DMart. " +
+                "3. Use metric units (kg, g, l, ml). " +
+                "4. Provide savings strategies specific to the Indian market."
+            )));
+            body.put("system_instruction", systemInstruction);
+
+            // 2. USER CONTENT
             JSONArray contents = new JSONArray();
-            JSONObject part = new JSONObject().put("text", "You are the GrocCompare AI assistant. Help the user save money on groceries. User asks: " + userMsg);
+            JSONObject part = new JSONObject().put("text", userMsg);
             contents.put(new JSONObject().put("parts", new JSONArray().put(part)));
             body.put("contents", contents);
 
@@ -108,22 +112,12 @@ public class GrocController {
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                 .build();
 
-            System.out.println("Calling Gemini API at: " + geminiUrl);
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            
-            // Log the raw response body for debugging in Railway logs
-            System.out.println("Gemini API Raw Response: " + response.body());
-
             JSONObject resJson = new JSONObject(response.body());
             
-            // Check for API errors (like 404 or Invalid Key)
-            if (resJson.has("error")) {
-                String errorMsg = resJson.getJSONObject("error").getString("message");
-                System.err.println("Gemini API Error: " + errorMsg);
-                return Map.of("reply", "AI Service Error: " + errorMsg);
-            }
-            
-            // Extract the generated text content from the JSON response candidates
+            // Log for debugging
+            System.out.println("Gemini Response: " + response.body());
+
             String aiReply = resJson.getJSONArray("candidates")
                                    .getJSONObject(0)
                                    .getJSONObject("content")
@@ -132,10 +126,9 @@ public class GrocController {
                                    .getString("text");
 
             return Map.of("reply", aiReply);
-        } catch (Exception e) { 
-            System.err.println("Java Chat Exception: " + e.getMessage());
-            e.printStackTrace(); 
-            return Map.of("reply", "AI Connection Error. See Railway logs for details."); 
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Map.of("reply", "AI connection failed. Ensure GEMINI_API_KEY is correctly set in Railway.");
         }
     }
 
