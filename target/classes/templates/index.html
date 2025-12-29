@@ -28,7 +28,7 @@
                 <div class="header-icons">
                     <button id="dark-mode-toggle" title="Toggle Theme">🌓</button>
                     <span class="icon" onclick="toggleWishlist()" title="Wishlist">♡</span>
-                    <span class="icon" onclick="switchView('compare')" title="Search">🔍</span>
+                    <span class="icon" onclick="switchView('compare')" title="Search Results">🔍</span>
                 </div>
             </div>
         </header>
@@ -41,14 +41,16 @@
                         <option value="Delhi">Delhi</option>
                         <option value="Mumbai">Mumbai</option>
                         <option value="Bangalore">Bangalore</option>
+                        <option value="Hyderabad">Hyderabad</option>
                     </select>
                     <input type="text" id="item-search" placeholder="Search products, brands, or categories">
-                    <button id="search-btn" onclick="performSearch()">Search</button>
+                    <button id="search-btn">Search</button>
                 </div>
                 <div class="popular-searches">
                     <button onclick="quickSearch('Milk')" class="pill">Milk</button>
                     <button onclick="quickSearch('Tomato')" class="pill">Tomato</button>
                     <button onclick="quickSearch('Atta')" class="pill">Atta</button>
+                    <button onclick="quickSearch('Sugar')" class="pill">Sugar</button>
                 </div>
             </div>
         </section>
@@ -59,16 +61,26 @@
                     <button onclick="switchView('compare')" id="nav-compare" class="side-btn active">Comparison Engine</button>
                     <button onclick="switchView('budget')" id="nav-budget" class="side-btn">Budget Assistant</button>
                 </nav>
+                
                 <div id="wishlist-container" class="wishlist-box">
                     <h4>Saved for Later</h4>
-                    <div id="wishlist-items"></div>
+                    <div id="wishlist-items">
+                        <p style="font-size:0.8rem; color:#aaa;">No items saved.</p>
+                    </div>
+                </div>
+
+                <div class="coach-card" style="margin-top:20px;">
+                    <p><strong>Coach Tip:</strong> Prices vary by location. Use the picker to find city-specific deals!</p>
                 </div>
             </aside>
 
             <section class="results-area">
                 <div id="comparison-view">
-                    <div id="results-summary" class="summary-text"></div>
-                    <div id="loader" class="hidden"><div class="spinner"></div></div>
+                    <div id="results-summary" class="summary-text" style="display:none;"></div>
+                    <div id="loader" class="hidden">
+                        <div class="spinner"></div>
+                        <p id="loader-text">Fetching live prices...</p>
+                    </div>
                     <div id="comparison-results" class="product-grid"></div>
                 </div>
 
@@ -76,11 +88,13 @@
                     <div class="budget-card">
                         <h2>💸 Smart Budget Coach</h2>
                         <div class="budget-form">
-                            <input type="number" id="monthly-budget" placeholder="Monthly Budget (₹)">
-                            <input type="number" id="household-size" placeholder="Family Size">
-                            <button class="calculate-btn" onclick="handleCalculateBudget()">Generate Strategy</button>
+                            <input type="number" id="monthly-budget" placeholder="Monthly Budget (₹)" value="15000">
+                            <input type="number" id="household-size" placeholder="Family Size" value="4">
+                            <button id="calculate-budget-btn" class="calculate-btn">Generate Strategy</button>
                         </div>
-                        <div id="budget-results" class="recommendation-box"></div>
+                        <div id="budget-results" class="recommendation-box">
+                            <h3 style="color:#666;">Enter details to generate your coach strategy.</h3>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -90,29 +104,26 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <div class="logo">Groc<span>Compare</span></div>
-                    <p>India's cleanest price discovery engine for groceries, cabs, and digital plans.</p>
+                    <p>India's smartest price discovery engine for grocery, electronics, and essentials.</p>
                 </div>
                 <div class="footer-col">
                     <h4>Products</h4>
-                    <a href="#" onclick="switchView('compare')">Price Engine</a>
-                    <a href="#" onclick="switchView('budget')">Budget Coach</a>
-                    <a href="#">Browser Extension</a>
+                    <a href="javascript:void(0)" onclick="switchView('compare')">Price Engine</a>
+                    <a href="javascript:void(0)" onclick="switchView('budget')">Budget Coach</a>
                 </div>
                 <div class="footer-col">
                     <h4>Support</h4>
                     <a href="#">Help Center</a>
-                    <a href="#">API Documentation</a>
-                    <a href="#">Contact Us</a>
+                    <a href="#">API Status</a>
                 </div>
                 <div class="footer-col">
-                    <h4>Connect</h4>
-                    <div class="social-links">
-                        <a href="#">TW</a> <a href="#">IG</a> <a href="#">LI</a>
-                    </div>
+                    <h4>Legal</h4>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Use</a>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2025 GrocCompare Pro. All rights reserved. Built for Smart Savings.</p>
+                <p>&copy; 2025 GrocCompare Pro. Built with ❤️ in India.</p>
             </div>
         </footer>
     </div>
