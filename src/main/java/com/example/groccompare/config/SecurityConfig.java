@@ -1,5 +1,7 @@
 package com.example.groccompare.config;
 
+import com.example.groccompare.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -12,32 +14,35 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    @Autowired
+    private UserService userService; // The bridge to MongoDB
+
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // This tool encrypts passwords so even if the DB is leaked, passwords are safe
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(); // Secure password hashing
     }
 
     @Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-        .csrf(csrf -> csrf.disable())
-        .authorizeHttpRequests(auth -> auth
-            // 1. Explicitly allow the splash/home and auth pages
-            .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**").permitAll()
-            // 2. Everything else requires a login
-            .anyRequest().authenticated()
-        )
-        .formLogin(form -> form
-            .loginPage("/login") // Matches the @GetMapping in AuthController
-            .loginProcessingUrl("/login") // The POST target for the form
-            .defaultSuccessUrl("/", true) // Redirect back to index after login
-            .permitAll()
-        )
-        .logout(logout -> logout
-            .logoutSuccessUrl("/login?logout")
-            .permitAll());
-    
-    return http.build();
-}
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable()) // Disable for development convenience
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**").permitAll()
+                .anyRequest().authenticated()
+            )
+            // Tell Spring Security to use your MongoDB service
+            .userDetailsService(userService) 
+            .formLogin(form -> form
+                .loginPage("/login")
+                .defaultSuccessUrl("/", true) // Redirect to engine after login
+                .failureUrl("/login?error")   // Show error message on failure
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutSuccessUrl("/login?logout")
+                .permitAll()
+            );
+
+        return http.build();
+    }
 }

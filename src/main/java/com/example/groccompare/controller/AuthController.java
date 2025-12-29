@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
@@ -17,24 +18,27 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // Show Login Page
     @GetMapping("/login")
     public String login() {
-        return "login"; 
+        return "login";
     }
 
-    // Show Registration Page
     @GetMapping("/register")
     public String register() {
         return "register";
     }
 
-    // Handle Registration Form Submission
+    // Use @ModelAttribute to map form fields to the User object
     @PostMapping("/register")
-    public String registerUser(User user) {
-        // Encrypt the password before saving to MongoDB
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
-        return "redirect:/login?success"; // Redirect to login after successful signup
+    public String registerUser(@ModelAttribute User user) {
+        try {
+            // Encrypt password before saving
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            userRepository.save(user);
+            return "redirect:/login?success";
+        } catch (Exception e) {
+            // If it hangs here, check your Railway MongoDB connection logs
+            return "redirect:/register?error";
+        }
     }
 }
