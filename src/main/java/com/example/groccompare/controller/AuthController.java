@@ -31,15 +31,26 @@ public class AuthController {
     // Use @ModelAttribute to map form fields to the User object
     @PostMapping("/register")
 public String registerUser(@ModelAttribute User user) {
+    // 1. Log the incoming data to see if it's empty
+    System.out.println("DEBUG: Received registration request for: " + user.getUsername());
+
     try {
-        // Encrypt password before saving
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            System.out.println("DEBUG: Error - Password was empty!");
+            return "redirect:/register?error=empty_password";
+        }
+
+        // 2. Encrypt and Save
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
-        System.out.println("Successfully saved user: " + user.getUsername());
+        
+        System.out.println("DEBUG: Successfully saved user to MongoDB!");
         return "redirect:/login?success";
     } catch (Exception e) {
-        e.printStackTrace(); // This will show the exact error in Railway Logs
-        return "redirect:/register?error";
+        // 3. This will print the exact connection error in Railway Logs
+        System.err.println("DEBUG: Database Error: " + e.getMessage());
+        e.printStackTrace(); 
+        return "redirect:/register?error=database_connection";
     }
 }
 }
