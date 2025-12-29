@@ -24,7 +24,9 @@ public class GrocController {
     private String GEMINI_API_KEY;
 
     @GetMapping("/")
-    public String index() { return "index"; }
+    public String index() { 
+        return "index"; 
+    }
 
     @GetMapping("/search")
     @ResponseBody
@@ -68,29 +70,31 @@ public class GrocController {
                                           absoluteLink, status, imageUrl));
                 }
             }
-        } catch (Exception e) { System.err.println("Search Error: " + e.getMessage()); }
+        } catch (Exception e) { 
+            System.err.println("Search Error: " + e.getMessage()); 
+        }
         results.sort(Comparator.comparingDouble(Product::normalizedPrice));
         response.put("comparisonResults", results);
         if (!results.isEmpty()) response.put("globalBestDeal", results.get(0));
         return response;
     }
 
-    // --- UPDATED: AI Chatbot Endpoint with Enhanced Error Reporting ---
+    // --- FIXED: AI Chatbot Endpoint with Correct Model Path ---
     @PostMapping("/chat")
     @ResponseBody
     public Map<String, String> chat(@RequestBody Map<String, String> payload) {
         String userMsg = payload.get("message");
         
-        // 1. Check if the environment variable is actually loaded
         if (GEMINI_API_KEY == null || GEMINI_API_KEY.isEmpty()) {
-            System.err.println("ERROR: GEMINI_API_KEY is null or empty in GrocController.");
-            return Map.of("reply", "System Config Error: GEMINI_API_KEY not found in Railway.");
+            System.err.println("ERROR: GEMINI_API_KEY is not set.");
+            return Map.of("reply", "System Error: GEMINI_API_KEY missing in Railway variables.");
         }
 
+        // Correct API endpoint for the v1beta channel
         String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY;
         
         try {
-            // Constructing the Gemini-specific JSON structure
+            // Construct the standard Gemini request body
             JSONObject body = new JSONObject();
             JSONArray contents = new JSONArray();
             JSONObject part = new JSONObject().put("text", "You are the GrocCompare AI assistant. Help the user save money on groceries. User asks: " + userMsg);
@@ -104,22 +108,22 @@ public class GrocController {
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                 .build();
 
-            // 2. Execute the request and capture the response
+            System.out.println("Calling Gemini API at: " + geminiUrl);
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             
-            // 3. LOG THE FULL RESPONSE to Railway for your inspection
-            System.out.println("FULL Gemini API Raw Response: " + response.body());
+            // Log the raw response body for debugging in Railway logs
+            System.out.println("Gemini API Raw Response: " + response.body());
 
             JSONObject resJson = new JSONObject(response.body());
             
-            // 4. Check for API-level errors (Invalid Key, Quota Exceeded, etc.)
+            // Check for API errors (like 404 or Invalid Key)
             if (resJson.has("error")) {
                 String errorMsg = resJson.getJSONObject("error").getString("message");
-                System.err.println("Gemini API returned an error: " + errorMsg);
+                System.err.println("Gemini API Error: " + errorMsg);
                 return Map.of("reply", "AI Service Error: " + errorMsg);
             }
             
-            // 5. Navigate the JSON tree to get the text
+            // Extract the generated text content from the JSON response candidates
             String aiReply = resJson.getJSONArray("candidates")
                                    .getJSONObject(0)
                                    .getJSONObject("content")
@@ -129,10 +133,9 @@ public class GrocController {
 
             return Map.of("reply", aiReply);
         } catch (Exception e) { 
-            // 6. Log the specific Java exception stack trace
-            System.err.println("Java Exception in Chat Method: " + e.getMessage());
+            System.err.println("Java Chat Exception: " + e.getMessage());
             e.printStackTrace(); 
-            return Map.of("reply", "AI Error: Check Railway logs for the stack trace. Details: " + e.getMessage()); 
+            return Map.of("reply", "AI Connection Error. See Railway logs for details."); 
         }
     }
 
