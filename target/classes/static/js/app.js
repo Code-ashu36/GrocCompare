@@ -1,9 +1,10 @@
 /**
  * GrocCompare Pro | Premium Logic Engine
- * UPDATED: Smooth View Transitions & Chat Integration
+ * UPDATED: Smooth Transitions, Price Filtering, and AI Chatbot
  */
 
-// 1. Splash Screen & Initialization
+let allProducts = []; 
+
 window.addEventListener('load', () => {
     setTimeout(() => {
         const splash = document.getElementById('splash-screen');
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
     };
     if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+    
     document.getElementById('search-btn').onclick = performSearch;
     document.getElementById('item-search').onkeypress = (e) => {
         if (e.key === 'Enter') performSearch();
@@ -33,13 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const priceSlider = document.querySelector('.accent-range');
     if (priceSlider) {
-        priceSlider.addEventListener('input', (e) => {
-            filterByPrice(e.target.value);
-        });
+        priceSlider.addEventListener('input', (e) => filterByPrice(e.target.value));
     }
 });
 
-// 2. Smooth View Management
+// Smooth View Switcher
 function switchView(viewId) {
     const compareView = document.getElementById('comparison-view');
     const budgetView = document.getElementById('budget-assistant');
@@ -75,54 +75,24 @@ function switchView(viewId) {
     }, 300);
 }
 
-// --- Chatbot Logic ---
-function toggleChat() {
-    const chat = document.getElementById('chat-box');
-    chat.classList.toggle('hidden');
-}
-
-async function sendChatMessage() {
-    const input = document.getElementById('chat-input');
-    const msgBox = document.getElementById('chat-messages');
-    const userMsg = input.value;
-    if (!userMsg) return;
-
-    // Show User Message
-    msgBox.insertAdjacentHTML('beforeend', `<div style="text-align:right; margin-bottom:10px;"><span style="background:var(--grey-100); padding:8px 15px; border-radius:12px; display:inline-block;">${userMsg}</span></div>`);
-    input.value = '';
-    msgBox.scrollTop = msgBox.scrollHeight;
-
-    try {
-        const response = await fetch('/chat', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ message: userMsg })
-        });
-        const data = await response.json();
-        
-        // Show AI Message using the premium pastel accent
-        msgBox.insertAdjacentHTML('beforeend', `<div class="pill-btn accent-purple" style="margin-bottom:10px; width:fit-content; border:none; color:inherit;">${data.reply}</div>`);
-        msgBox.scrollTop = msgBox.scrollHeight;
-    } catch (err) {
-        msgBox.insertAdjacentHTML('beforeend', `<div style="color:red; font-size:0.8rem; margin-bottom:10px;">Chat error. Please try again.</div>`);
-    }
-}
-
-// 3. Search Implementation
 async function performSearch() {
     const query = document.getElementById('item-search').value;
     const location = document.getElementById('location-picker').value;
     const loader = document.getElementById('loader');
     const grid = document.getElementById('comparison-results');
     if (!query) return;
+
     switchView('compare');
     loader.classList.remove('hidden');
     grid.innerHTML = '';
+
     try {
         const response = await fetch(`/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`);
         const data = await response.json();
-        if (data.comparisonResults && data.comparisonResults.length > 0) {
-            const prices = data.comparisonResults.map(p => p.currentPrice);
+        allProducts = data.comparisonResults;
+
+        if (allProducts.length > 0) {
+            const prices = allProducts.map(p => p.currentPrice);
             const slider = document.querySelector('.accent-range');
             if (slider) {
                 slider.min = Math.floor(Math.min(...prices));
@@ -130,34 +100,33 @@ async function performSearch() {
                 slider.value = slider.max;
             }
         }
-        renderResults(data);
-    } catch (error) { console.error("Fetch failed", error); } finally { loader.classList.add('hidden'); }
+        renderResults(allProducts);
+    } catch (error) { console.error("Search failed", error); } finally { loader.classList.add('hidden'); }
 }
 
 function filterByPrice(maxPrice) {
-    const cards = document.querySelectorAll('.product-card');
-    cards.forEach(card => {
+    document.querySelectorAll('.product-card').forEach(card => {
         const price = parseFloat(card.getAttribute('data-price'));
-        if (price <= maxPrice) card.style.display = 'flex';
-        else card.style.display = 'none';
+        card.style.display = (price <= maxPrice) ? 'flex' : 'none';
     });
 }
 
-function renderResults(data) {
+function renderResults(dataList) {
     const grid = document.getElementById('comparison-results');
     const summary = document.getElementById('results-summary');
     const accents = ['#dbe9ff', '#ebe5ff', '#e4fff3', '#fff4e6'];
-    if (!data.comparisonResults || data.comparisonResults.length === 0) {
-        summary.innerHTML = "No live market data found.";
+    if (dataList.length === 0) {
+        summary.innerHTML = "No live deals found.";
         return;
     }
-    summary.innerHTML = `Analyzing ${data.comparisonResults.length} market sources. Best Price at ${data.globalBestDeal.platformId}.`;
-    data.comparisonResults.forEach((p, index) => {
-        const randomAccent = accents[index % accents.length];
+    summary.innerHTML = `Analyzing ${dataList.length} market sources. Best price: ₹${dataList[0].currentPrice}`;
+    
+    dataList.forEach((p, index) => {
+        const accent = accents[index % accents.length];
         const card = `
-            <div class="product-card" style="--card-accent: ${randomAccent}" data-price="${p.currentPrice}">
+            <div class="product-card" style="--card-accent: ${accent}" data-price="${p.currentPrice}">
                 <div class="card-img-block">
-                    <img src="${p.imageUrl}" alt="product">
+                    <img src="${p.imageUrl}" alt="product" onerror="this.src='https://via.placeholder.com/150'">
                 </div>
                 <div class="card-body">
                     <div class="deal-badge" style="background: ${p.priceStatus === 'Low' ? '#f0fff6' : 'rgba(0,0,0,0.05)'}">
@@ -173,7 +142,34 @@ function renderResults(data) {
     });
 }
 
-// 5. Budget Strategy
+// Chatbot UI Logic
+function toggleChat() {
+    const chat = document.getElementById('chat-box');
+    chat.classList.toggle('hidden');
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const msgBox = document.getElementById('chat-messages');
+    const userMsg = input.value;
+    if (!userMsg) return;
+
+    msgBox.insertAdjacentHTML('beforeend', `<div style="text-align:right; margin-bottom:10px;"><span style="background:var(--grey-100); padding:8px 15px; border-radius:12px; display:inline-block; font-weight:500;">${userMsg}</span></div>`);
+    input.value = '';
+    msgBox.scrollTop = msgBox.scrollHeight;
+
+    try {
+        const response = await fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message: userMsg })
+        });
+        const data = await response.json();
+        msgBox.insertAdjacentHTML('beforeend', `<div class="pill-btn accent-purple" style="margin-bottom:10px; width:fit-content; border:none; color:#333; text-align:left;">${data.reply}</div>`);
+        msgBox.scrollTop = msgBox.scrollHeight;
+    } catch (err) { console.error(err); }
+}
+
 function handleCalculateBudget() {
     const budget = document.getElementById('monthly-budget').value;
     const size = document.getElementById('household-size').value;
@@ -184,11 +180,10 @@ function handleCalculateBudget() {
     resultBox.innerHTML = `
         <div class="budget-strategy-card" style="background: var(--grey-100); padding: 40px; border-radius: 24px; border: 1px solid var(--grey-200); margin-top: 30px;">
             <h3 style="font-size: 1.6rem; margin-bottom: 20px;">✅ AI Spending Strategy</h3>
-            <p style="font-size: 1.2rem; margin-bottom: 15px;">Your Monthly Target: <strong>₹${perPerson}</strong> per person.</p>
+            <p style="font-size: 1.2rem; margin-bottom: 15px;">Monthly Target: <strong>₹${perPerson}</strong> per person.</p>
             <ul style="text-align:left; padding-left:25px; font-size:1.1rem; line-height:1.8;">
-                <li><strong>Dynamic Comparison:</strong> Use live search for staples to capture market variance.</li>
-                <li><strong>Bulk Advantage:</strong> Buying 5kg+ packs reduces the normalized unit rate significantly.</li>
-                <li><strong>Rate Tracking:</strong> Check your dashboard every Monday for new weekly deals.</li>
+                <li>Compare normalized rates to find hidden bulk savings.</li>
+                <li>Track weekly Monday resets for the lowest market deals.</li>
             </ul>
         </div>`;
 }
