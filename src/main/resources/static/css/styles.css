@@ -1,111 +1,73 @@
-/* --- 1. System Variables --- */
+/* --- Global Variables with Dark Mode Contrast Fixes --- */
 :root {
     --white: #ffffff;
-    --grey-100: #f5f5f5;
-    --grey-200: #e8e8e8;
-    --text-222: #222222;
-    --text-555: #555555;
-    
-    /* Pastel Palette */
-    --accent-blue: #dbe9ff;
-    --accent-purple: #ebe5ff;
-    --accent-mint: #e4fff3;
-    --accent-beige: #fff4e6;
-    
-    --shadow-light: 0 10px 40px rgba(0,0,0,0.03);
+    --grey-bg: #f6f6f6;
+    --grey-gradient: linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%);
+    --text-main: #222222;
+    --text-muted: #666666;
+    --border-light: #ececec;
+    --accent: #4a90e2;
+    --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
 }
 
 body.dark-mode {
-    --white: #1a1a1a;
-    --grey-100: #121212;
-    --grey-200: #252525;
-    --text-222: #f5f5f5;
-    --text-555: #bbbbbb;
-    --shadow-light: 0 10px 40px rgba(0,0,0,0.4);
+    --white: #121212;
+    --grey-bg: #1e1e1e;
+    --grey-gradient: linear-gradient(180deg, #252525 0%, #121212 100%);
+    --text-main: #f5f5f5; /* Bright text for visibility */
+    --text-muted: #bbbbbb;
+    --border-light: #333333;
+    --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text-222); overflow-x: hidden; }
-
-/* --- 2. Splash Screen --- */
-#splash-screen {
-    position: fixed; top:0; left:0; width:100%; height:100%;
-    background: radial-gradient(circle at center, #ffffff 0%, #eeeeee 100%);
-    z-index: 10000; display: flex; align-items: center; justify-content: center;
-    transition: opacity 1s ease;
+/* --- Smooth Transition Containers --- */
+.view-container {
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    opacity: 1;
+    transform: translateY(0);
 }
-.splash-logo { font-size: 2.5rem; font-weight: 700; color: #333; }
-.splash-logo span { font-weight: 300; color: #aaa; }
-.loader-ring { width: 40px; height: 40px; border: 2px solid #eee; border-top: 2px solid var(--text-555); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
-@keyframes spin { to { transform: rotate(360deg); } }
 
-/* --- 3. Header & Hero --- */
-.glass-header {
-    background: rgba(255,255,255,0.7); backdrop-filter: blur(15px);
-    border-bottom: 1px solid var(--grey-200); position: sticky; top:0; z-index: 900;
+.view-container.hidden {
+    display: none;
+    opacity: 0;
+    transform: translateY(10px);
 }
-.header-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; }
-.header-search-container input { width: 400px; padding: 10px 25px; border-radius: 25px; border: 1px solid var(--grey-200); background: var(--grey-100); outline: none; }
 
-.hero-sky { background: linear-gradient(180deg, #ffffff 0%, #f0f7ff 100%); padding: 100px 20px; text-align: center; }
-.hero-title { font-weight: 300; font-size: 3rem; margin-bottom: 30px; letter-spacing: -1px; }
-
-.main-search-pill {
-    max-width: 800px; margin: 0 auto; display: flex; background: var(--white);
-    padding: 8px; border-radius: 50px; border: 1px solid var(--grey-200); box-shadow: var(--shadow-light);
-}
-#location-picker { border: none; background: transparent; padding: 0 20px; border-right: 1px solid var(--grey-200); color: var(--text-222); outline: none; }
-#item-search { flex: 1; border: none; padding: 0 20px; background: transparent; outline: none; color: var(--text-222); font-size: 1rem; }
-.search-trigger { background: #333; color: white; border: none; padding: 12px 35px; border-radius: 40px; cursor: pointer; font-weight: 600; }
-
-.pill-btn { border: none; padding: 6px 18px; border-radius: 20px; margin: 0 5px; cursor: pointer; transition: 0.3s; font-weight: 500; font-size: 0.85rem; color: var(--text-555); }
-.accent-blue { background: var(--accent-blue); }
-.accent-purple { background: var(--accent-purple); }
-.accent-mint { background: var(--accent-mint); }
-
-/* --- 4. Sidebar & Layout --- */
-.platform-layout { max-width: 1400px; margin: 50px auto; display: grid; grid-template-columns: 280px 1fr; gap: 40px; padding: 0 40px; }
-.sidebar-panel { background: var(--grey-100); padding: 30px; border-radius: 24px; border: 1px solid var(--grey-200); height: fit-content; }
-.nav-link { display: block; width: 100%; text-align: left; padding: 12px; border: none; background: transparent; cursor: pointer; border-radius: 12px; color: var(--text-555); margin-bottom: 5px; }
-.nav-link.active { background: var(--white); color: var(--text-222); font-weight: 600; box-shadow: var(--shadow-light); }
-
-/* --- 5. Product Grid & Card Accents --- */
-.accent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
-
-.product-card {
-    background: var(--white); border-radius: 20px; border: 1px solid var(--grey-200);
-    overflow: hidden; transition: 0.4s; display: flex; flex-direction: column;
-}
-.product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
-
-/* Card Image Block with Accent Backgrounds */
+/* --- Image Visibility Fix --- */
 .card-img-block {
-    height: 180px; padding: 20px; display: flex; align-items: center; justify-content: center;
-    background: var(--card-accent, var(--accent-blue)); /* Set via JS */
+    height: 180px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px 15px 0 0;
+    overflow: hidden;
+    background: #fff; /* White background behind images even in dark mode */
 }
-.card-img-block img { max-height: 100%; max-width: 100%; object-fit: contain; }
 
-.card-body { padding: 25px; flex: 1; display: flex; flex-direction: column; }
-.deal-badge { background: #f0fff6; color: #2d5a2d; padding: 4px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; width: fit-content; margin-bottom: 15px; }
-.card-body h3 { font-size: 1rem; margin-bottom: 10px; height: 45px; overflow: hidden; }
-.price-large { font-size: 1.6rem; font-weight: 800; margin-bottom: 5px; }
-.rate-muted { font-size: 0.8rem; color: var(--text-555); margin-bottom: 25px; }
-
-.compare-btn-minimal {
-    text-decoration: none; text-align: center; border: 1px solid var(--grey-200);
-    padding: 12px; border-radius: 12px; color: var(--text-222); font-weight: 600;
-    margin-top: auto; transition: 0.3s;
+.card-img-block img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain; /* Ensures the whole image fits */
+    display: block;
 }
-.compare-btn-minimal:hover { background: #333; color: white; border-color: #333; }
 
-/* --- 6. Footer --- */
-.footer-premium { background: var(--grey-100); padding: 80px 40px 40px; border-top: 1px solid var(--grey-200); margin-top: 100px; }
-.footer-grid { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; gap: 50px; }
-.footer-links h5 { font-size: 0.8rem; text-transform: uppercase; color: var(--text-555); margin-bottom: 20px; letter-spacing: 1px; }
-.footer-links a { display: block; text-decoration: none; color: #777; font-size: 0.9rem; margin-bottom: 12px; }
-.footer-bottom { text-align: center; margin-top: 60px; font-size: 0.8rem; color: #aaa; }
+/* --- Range Slider Styling --- */
+input[type=range].accent-range {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
 
-/* Utilities */
-.hidden { display: none !important; }
-.fade-in { animation: fadeIn 1s ease forwards; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+/* --- Fix for Dark Mode Search Visibility --- */
+body.dark-mode .header-search-bar input, 
+body.dark-mode .search-pill {
+    background: #2a2a2a;
+    color: white;
+    border-color: #444;
+}
+
+body.dark-mode .nav-link.active {
+    background: #333;
+    color: white;
+}

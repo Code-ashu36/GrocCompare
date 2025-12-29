@@ -8,5 +8,6 @@ public record Product(
     double currentPrice,
     double normalizedPrice,
     String productLink,
-    String priceStatus
+    String priceStatus,
+    String imageUrl // Added to support image rendering
 ) {}

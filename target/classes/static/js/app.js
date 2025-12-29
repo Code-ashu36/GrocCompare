@@ -1,8 +1,10 @@
 /**
- * GrocCompare Pro | Premium Logic Engine
+ * GrocCompare Pro | Functionality & Transition Logic
  */
 
-// 1. Splash Screen & Initialization
+let allProducts = []; 
+
+// 1. Splash Screen & Smooth Entry
 window.addEventListener('load', () => {
     setTimeout(() => {
         const splash = document.getElementById('splash-screen');
@@ -10,49 +12,42 @@ window.addEventListener('load', () => {
             splash.style.opacity = '0';
             setTimeout(() => splash.classList.add('hidden'), 1000);
         }
-    }, 2500); // Premium loading duration
+    }, 2800); 
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Dark Mode Toggle
-    const themeBtn = document.getElementById('dark-mode-toggle');
-    themeBtn.onclick = () => {
-        document.body.classList.toggle('dark-mode');
-        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
-    };
-
-    // Load saved theme
-    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
-
-    // Search Buttons
-    document.getElementById('search-btn').onclick = performSearch;
-    document.getElementById('item-search').onkeypress = (e) => {
-        if (e.key === 'Enter') performSearch();
-    };
-});
-
-// 2. View Management
+// 2. Smooth View Management (Choppiness Fixed)
 function switchView(viewId) {
-    const compareView = document.getElementById('comparison-view');
-    const budgetView = document.getElementById('budget-assistant');
-    const hero = document.querySelector('.hero-sky');
+    const compareSection = document.getElementById('comparison-view');
+    const budgetSection = document.getElementById('budget-assistant');
+    const heroSection = document.querySelector('.premium-hero');
 
-    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
 
-    if (viewId === 'budget') {
-        compareView.classList.add('hidden');
-        budgetView.classList.remove('hidden');
-        hero.classList.add('hidden');
-        document.getElementById('nav-budget').classList.add('active');
-    } else {
-        compareView.classList.remove('hidden');
-        budgetView.classList.add('hidden');
-        hero.classList.remove('hidden');
-        document.getElementById('nav-compare').classList.add('active');
-    }
+    // Smooth Fade Out
+    [compareSection, budgetSection].forEach(el => el.style.opacity = '0');
+
+    setTimeout(() => {
+        if (viewId === 'budget') {
+            compareSection.classList.add('hidden');
+            budgetSection.classList.remove('hidden');
+            heroSection.classList.add('hidden');
+            document.getElementById('nav-budget').classList.add('active');
+        } else {
+            compareSection.classList.remove('hidden');
+            budgetSection.classList.add('hidden');
+            heroSection.classList.remove('hidden');
+            document.getElementById('nav-compare').classList.add('active');
+        }
+        
+        // Smooth Fade In
+        setTimeout(() => {
+            const activeEl = viewId === 'budget' ? budgetSection : compareSection;
+            activeEl.style.opacity = '1';
+        }, 50);
+    }, 400);
 }
 
-// 3. Search Implementation
+// 3. Search & Real Filtering Logic
 async function performSearch() {
     const query = document.getElementById('item-search').value;
     const location = document.getElementById('location-picker').value;
@@ -68,70 +63,74 @@ async function performSearch() {
     try {
         const response = await fetch(`/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`);
         const data = await response.json();
-        renderResults(data);
+        
+        allProducts = data.comparisonResults;
+        
+        // Dynamic Price Slider Range Setup
+        const prices = allProducts.map(p => p.currentPrice);
+        const slider = document.querySelector('.accent-range');
+        if (slider && prices.length > 0) {
+            slider.min = Math.floor(Math.min(...prices));
+            slider.max = Math.ceil(Math.max(...prices));
+            slider.value = slider.max;
+        }
+
+        renderResults(allProducts);
     } catch (error) {
-        console.error("Fetch failed", error);
+        console.error("Search failed", error);
     } finally {
         loader.classList.add('hidden');
     }
 }
 
-// 4. Accent-Driven UI Rendering
-function renderResults(data) {
+// Real Filter Logic (No longer a gimmick)
+function filterByPrice(maxPrice) {
+    const cards = document.querySelectorAll('.product-card');
+    cards.forEach(card => {
+        const price = parseFloat(card.dataset.price);
+        card.style.display = (price <= maxPrice) ? 'flex' : 'none';
+    });
+}
+
+// 4. Render Results (Image Fitting Fixed)
+function renderResults(products) {
     const grid = document.getElementById('comparison-results');
-    const summary = document.getElementById('results-summary');
-    
-    // Pastel color rotation
     const accents = ['#dbe9ff', '#ebe5ff', '#e4fff3', '#fff4e6'];
 
-    if (!data.comparisonResults || data.comparisonResults.length === 0) {
-        summary.innerHTML = "No live market data found.";
-        return;
-    }
-
-    summary.innerHTML = `Analyzing ${data.comparisonResults.length} market sources. Best Price at ${data.globalBestDeal.platformId}.`;
-
-    data.comparisonResults.forEach((p, index) => {
-        const randomAccent = accents[index % accents.length];
+    products.forEach((p, index) => {
+        const accent = accents[index % accents.length];
         const card = `
-            <div class="product-card" style="--card-accent: ${randomAccent}">
-                <div class="card-img-block">
-                    <img src="${p.imageUrl}" alt="product">
+            <div class="product-card" data-price="${p.currentPrice}">
+                <div class="card-img-block" style="background-color: ${accent};">
+                    <img src="${p.imageUrl}" alt="${p.productName}" 
+                         style="max-width: 100%; max-height: 100%; object-fit: contain; display: block;"
+                         onerror="this.src='https://via.placeholder.com/150?text=No+Image'">
                 </div>
                 <div class="card-body">
-                    <div class="deal-badge" style="background: ${p.priceStatus === 'Low' ? '#f0fff6' : 'rgba(0,0,0,0.05)'}">
-                        ${p.priceStatus === 'Low' ? 'Best Deal' : 'Market Price'} • ${p.platformId}
+                    <div class="best-deal-tag" style="background: ${p.priceStatus === 'Low' ? '#e4fff3' : '#eee'}">
+                        ${p.platformId}
                     </div>
                     <h3>${p.productName}</h3>
-                    <p class="price-large">₹${p.currentPrice.toFixed(2)}</p>
-                    <p class="rate-muted">Rate: ₹${p.normalizedPrice.toFixed(2)}/unit</p>
-                    <a href="${p.productLink}" target="_blank" class="compare-btn-minimal">Compare Price</a>
+                    <p class="price" style="color: var(--text-main); font-weight: 800; font-size: 1.6rem;">₹${p.currentPrice.toFixed(2)}</p>
+                    <p class="rate" style="color: var(--text-muted); font-size: 0.8rem;">₹${p.normalizedPrice.toFixed(2)}/unit</p>
+                    <a href="${p.productLink}" target="_blank" class="compare-outline-btn">Compare Price</a>
                 </div>
             </div>`;
         grid.insertAdjacentHTML('beforeend', card);
     });
 }
 
-// 5. Budget logic (Restored)
-function handleCalculateBudget() {
-    const budget = document.getElementById('monthly-budget').value;
-    const size = document.getElementById('household-size').value;
-    const resultBox = document.getElementById('budget-results');
+// 5. Initialization
+document.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
-    if (!budget || !size) return;
-    const perPerson = Math.round(budget / size);
+    document.getElementById('dark-mode-toggle').onclick = () => {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    };
 
-    resultBox.innerHTML = `
-        <div class="budget-strategy-card" style="background: var(--grey-100); padding: 30px; border-radius: 20px; border: 1px solid var(--grey-200); margin-top: 30px;">
-            <h3>AI Spending Strategy</h3>
-            <p>Target: ₹${perPerson} per person/month.</p>
-            <ul style="margin-top:15px; text-align:left; padding-left:20px; font-size:0.9rem; line-height:1.6;">
-                <li><strong>Dynamic Comparison:</strong> Use live search for Milk and Atta to capture 10% market variance.</li>
-                <li><strong>Bulk Advantage:</strong> Buying 5kg+ packs reduces the normalized unit rate by ~15%.</li>
-            </ul>
-        </div>`;
-}
-
-// 6. Header/Quick search
-function handleHeaderSearch(e) { if (e.key === 'Enter') { document.getElementById('item-search').value = document.getElementById('header-query').value; performSearch(); } }
-function quickSearch(item) { document.getElementById('item-search').value = item; performSearch(); }
+    const priceSlider = document.querySelector('.accent-range');
+    if (priceSlider) {
+        priceSlider.addEventListener('input', (e) => filterByPrice(e.target.value));
+    }
+});

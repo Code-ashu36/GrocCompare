@@ -60,6 +60,9 @@ public class GrocController {
                     JSONObject item = shoppingResults.getJSONObject(i);
                     double currentItemPrice = item.optDouble("extracted_price", 0.0);
                     String title = item.optString("title", "Unknown Product");
+                    
+                    // Logic to extract image URL from SerpApi
+                    String imageUrl = item.optString("thumbnail", "https://via.placeholder.com/150?text=No+Image");
 
                     String rawLink = item.optString("link", item.optString("product_link", ""));
                     String absoluteLink = "#";
@@ -81,7 +84,8 @@ public class GrocController {
                         currentItemPrice,
                         calculateNormalizedPrice(title, currentItemPrice),
                         absoluteLink,
-                        status
+                        status,
+                        imageUrl // Passing the image URL to the model
                     ));
                 }
             }
