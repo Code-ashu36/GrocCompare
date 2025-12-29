@@ -19,23 +19,25 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable()) // Disabled for local development simplicity
-                .authorizeHttpRequests(auth -> auth
-                        // Allow everyone to see the splash screen, login page, and static files
-                        .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**").permitAll()
-                        // Everything else (like search) requires logging in
-                        .anyRequest().authenticated())
-                .formLogin(form -> form
-                        .loginPage("/login") // Use our custom login page
-                        .defaultSuccessUrl("/", true) // Go to home/search after success
-                        .permitAll())
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout") // Redirect to login with a message
-                        .permitAll());
-
-        return http.build();
-    }
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            // 1. Explicitly allow the splash/home and auth pages
+            .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**").permitAll()
+            // 2. Everything else requires a login
+            .anyRequest().authenticated()
+        )
+        .formLogin(form -> form
+            .loginPage("/login") // Matches the @GetMapping in AuthController
+            .loginProcessingUrl("/login") // The POST target for the form
+            .defaultSuccessUrl("/", true) // Redirect back to index after login
+            .permitAll()
+        )
+        .logout(logout -> logout
+            .logoutSuccessUrl("/login?logout")
+            .permitAll());
+    
+    return http.build();
+}
 }

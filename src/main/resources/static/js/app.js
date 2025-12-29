@@ -1,37 +1,61 @@
 /**
  * GrocCompare Pro | Premium Logic Engine
- * UPDATED: Smooth Transitions, Price Filtering, and AI Chatbot
+ * UPDATED: Authentication Guard & Null-Safe Listeners
  */
 
 let allProducts = []; 
 
 window.addEventListener('load', () => {
+    const splash = document.getElementById('splash-screen');
+    const appContent = document.getElementById('app-content');
+    
     setTimeout(() => {
-        const splash = document.getElementById('splash-screen');
         if (splash) {
             splash.style.opacity = '0';
-            setTimeout(() => splash.classList.add('hidden'), 1000);
+            setTimeout(() => {
+                splash.classList.add('hidden');
+                
+                // AUTH GUARD: Redirect if user is not authenticated
+                if (!appContent) {
+                    window.location.href = "/login";
+                } else {
+                    appContent.style.display = 'block';
+                    appContent.classList.add('fade-in');
+                }
+            }, 1000);
         }
     }, 2500); 
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Check if elements exist before adding listeners to avoid null errors
     const themeBtn = document.getElementById('dark-mode-toggle');
-    themeBtn.onclick = () => {
-        document.body.classList.toggle('dark-mode');
-        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
-    };
+    if (themeBtn) {
+        themeBtn.onclick = () => {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        };
+    }
+    
     if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
     
-    document.getElementById('search-btn').onclick = performSearch;
-    document.getElementById('item-search').onkeypress = (e) => {
-        if (e.key === 'Enter') performSearch();
-    };
+    const searchBtn = document.getElementById('search-btn');
+    if (searchBtn) searchBtn.onclick = performSearch;
+
+    const itemSearch = document.getElementById('item-search');
+    if (itemSearch) {
+        itemSearch.onkeypress = (e) => {
+            if (e.key === 'Enter') performSearch();
+        };
+    }
 
     // Chat Enter Listener
-    document.getElementById('chat-input')?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendChatMessage();
-    });
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput) {
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendChatMessage();
+        });
+    }
 
     const priceSlider = document.querySelector('.accent-range');
     if (priceSlider) {
@@ -44,6 +68,8 @@ function switchView(viewId) {
     const compareView = document.getElementById('comparison-view');
     const budgetView = document.getElementById('budget-assistant');
     const hero = document.querySelector('.hero-sky');
+
+    if (!compareView || !budgetView) return; // Guard for non-logged in state
 
     [compareView, budgetView].forEach(el => {
         el.style.opacity = '0';
@@ -76,11 +102,11 @@ function switchView(viewId) {
 }
 
 async function performSearch() {
-    const query = document.getElementById('item-search').value;
-    const location = document.getElementById('location-picker').value;
+    const query = document.getElementById('item-search')?.value;
+    const location = document.getElementById('location-picker')?.value;
     const loader = document.getElementById('loader');
     const grid = document.getElementById('comparison-results');
-    if (!query) return;
+    if (!query || !loader || !grid) return;
 
     switchView('compare');
     loader.classList.remove('hidden');
@@ -115,6 +141,8 @@ function renderResults(dataList) {
     const grid = document.getElementById('comparison-results');
     const summary = document.getElementById('results-summary');
     const accents = ['#dbe9ff', '#ebe5ff', '#e4fff3', '#fff4e6'];
+    if (!grid || !summary) return;
+
     if (dataList.length === 0) {
         summary.innerHTML = "No live deals found.";
         return;
@@ -142,15 +170,16 @@ function renderResults(dataList) {
     });
 }
 
-// Chatbot UI Logic
 function toggleChat() {
     const chat = document.getElementById('chat-box');
-    chat.classList.toggle('hidden');
+    if (chat) chat.classList.toggle('hidden');
 }
 
 async function sendChatMessage() {
     const input = document.getElementById('chat-input');
     const msgBox = document.getElementById('chat-messages');
+    if (!input || !msgBox) return;
+
     const userMsg = input.value;
     if (!userMsg) return;
 
@@ -171,10 +200,10 @@ async function sendChatMessage() {
 }
 
 function handleCalculateBudget() {
-    const budget = document.getElementById('monthly-budget').value;
-    const size = document.getElementById('household-size').value;
+    const budget = document.getElementById('monthly-budget')?.value;
+    const size = document.getElementById('household-size')?.value;
     const resultBox = document.getElementById('budget-results');
-    if (!budget || !size) return;
+    if (!budget || !size || !resultBox) return;
     const perPerson = Math.round(budget / size);
 
     resultBox.innerHTML = `
@@ -188,5 +217,21 @@ function handleCalculateBudget() {
         </div>`;
 }
 
-function handleHeaderSearch(e) { if (e.key === 'Enter') { document.getElementById('item-search').value = document.getElementById('header-query').value; performSearch(); } }
-function quickSearch(item) { document.getElementById('item-search').value = item; performSearch(); }
+function handleHeaderSearch(e) { 
+    if (e.key === 'Enter') { 
+        const headerVal = document.getElementById('header-query')?.value;
+        const mainInput = document.getElementById('item-search');
+        if (mainInput && headerVal) {
+            mainInput.value = headerVal; 
+            performSearch(); 
+        }
+    } 
+}
+
+function quickSearch(item) { 
+    const mainInput = document.getElementById('item-search');
+    if (mainInput) {
+        mainInput.value = item; 
+        performSearch(); 
+    }
+}
