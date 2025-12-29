@@ -1,84 +1,58 @@
 /**
- * GrocCompare Pro - Premium Minimal Logic
+ * GrocCompare Pro | Premium Logic Engine
  */
 
-// 1. Splash Screen Fade Logic
+// 1. Splash Screen & Initialization
 window.addEventListener('load', () => {
-    // Artificial delay to show premium splash
     setTimeout(() => {
         const splash = document.getElementById('splash-screen');
         if (splash) {
             splash.style.opacity = '0';
-            setTimeout(() => {
-                splash.classList.add('hidden');
-            }, 1000);
+            setTimeout(() => splash.classList.add('hidden'), 1000);
         }
-    }, 2800); 
+    }, 2500); // Premium loading duration
 });
-
-// 2. Global State & Initialization
-let currentView = 'compare';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize Theme from LocalStorage
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark-mode');
-    }
+    // Dark Mode Toggle
+    const themeBtn = document.getElementById('dark-mode-toggle');
+    themeBtn.onclick = () => {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    };
 
-    // Event Listeners
-    document.getElementById('search-btn').addEventListener('click', performSearch);
-    document.getElementById('dark-mode-toggle').addEventListener('click', toggleTheme);
-    
-    document.getElementById('item-search').addEventListener('keypress', (e) => {
+    // Load saved theme
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+
+    // Search Buttons
+    document.getElementById('search-btn').onclick = performSearch;
+    document.getElementById('item-search').onkeypress = (e) => {
         if (e.key === 'Enter') performSearch();
-    });
-
-    renderWishlist();
+    };
 });
 
-// 3. Theme Management (Fixed Contrast)
-function toggleTheme() {
-    document.body.classList.toggle('dark-mode');
-    const isDark = document.body.classList.contains('dark-mode');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-}
-
-// 4. View Management
+// 2. View Management
 function switchView(viewId) {
-    const compareSection = document.getElementById('comparison-view');
-    const budgetSection = document.getElementById('budget-assistant');
-    const heroSection = document.querySelector('.premium-hero');
+    const compareView = document.getElementById('comparison-view');
+    const budgetView = document.getElementById('budget-assistant');
+    const hero = document.querySelector('.hero-sky');
 
-    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
 
     if (viewId === 'budget') {
-        compareSection.classList.add('hidden');
-        budgetSection.classList.remove('hidden');
-        heroSection.classList.add('hidden');
+        compareView.classList.add('hidden');
+        budgetView.classList.remove('hidden');
+        hero.classList.add('hidden');
         document.getElementById('nav-budget').classList.add('active');
     } else {
-        compareSection.classList.remove('hidden');
-        budgetSection.classList.add('hidden');
-        heroSection.classList.remove('hidden');
+        compareView.classList.remove('hidden');
+        budgetView.classList.add('hidden');
+        hero.classList.remove('hidden');
         document.getElementById('nav-compare').classList.add('active');
     }
 }
 
-// 5. Header Search Link
-function handleHeaderSearch(event) {
-    if (event.key === 'Enter') {
-        const val = document.getElementById('header-query').value;
-        document.getElementById('item-search').value = val;
-        performSearch();
-    }
-}
-
-function quickSearch(item) {
-    document.getElementById('item-search').value = item;
-    performSearch();
-}
-
-// 6. Backend API Interaction
+// 3. Search Implementation
 async function performSearch() {
     const query = document.getElementById('item-search').value;
     const location = document.getElementById('location-picker').value;
@@ -87,7 +61,6 @@ async function performSearch() {
 
     if (!query) return;
 
-    // UI state
     switchView('compare');
     loader.classList.remove('hidden');
     grid.innerHTML = '';
@@ -95,7 +68,6 @@ async function performSearch() {
     try {
         const response = await fetch(`/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`);
         const data = await response.json();
-        
         renderResults(data);
     } catch (error) {
         console.error("Fetch failed", error);
@@ -104,55 +76,62 @@ async function performSearch() {
     }
 }
 
-// 7. Results Rendering (Ultra-Clean Card)
+// 4. Accent-Driven UI Rendering
 function renderResults(data) {
     const grid = document.getElementById('comparison-results');
     const summary = document.getElementById('results-summary');
+    
+    // Pastel color rotation
+    const accents = ['#dbe9ff', '#ebe5ff', '#e4fff3', '#fff4e6'];
 
     if (!data.comparisonResults || data.comparisonResults.length === 0) {
-        summary.innerHTML = "No products found.";
+        summary.innerHTML = "No live market data found.";
         return;
     }
 
-    summary.innerHTML = `Found ${data.comparisonResults.length} market deals. Best: ${data.globalBestDeal.platformId}`;
+    summary.innerHTML = `Analyzing ${data.comparisonResults.length} market sources. Best Price at ${data.globalBestDeal.platformId}.`;
 
-    data.comparisonResults.forEach(p => {
+    data.comparisonResults.forEach((p, index) => {
+        const randomAccent = accents[index % accents.length];
         const card = `
-            <div class="product-card">
-                <div class="best-deal-tag">${p.platformId}</div>
-                <h3>${p.productName}</h3>
-                <p class="price">₹${p.currentPrice.toFixed(2)}</p>
-                <p class="rate">₹${p.normalizedPrice.toFixed(2)} per unit</p>
-                <a href="${p.productLink}" target="_blank" class="compare-outline-btn">Compare Price</a>
+            <div class="product-card" style="--card-accent: ${randomAccent}">
+                <div class="card-img-block">
+                    <img src="${p.imageUrl}" alt="product">
+                </div>
+                <div class="card-body">
+                    <div class="deal-badge" style="background: ${p.priceStatus === 'Low' ? '#f0fff6' : 'rgba(0,0,0,0.05)'}">
+                        ${p.priceStatus === 'Low' ? 'Best Deal' : 'Market Price'} • ${p.platformId}
+                    </div>
+                    <h3>${p.productName}</h3>
+                    <p class="price-large">₹${p.currentPrice.toFixed(2)}</p>
+                    <p class="rate-muted">Rate: ₹${p.normalizedPrice.toFixed(2)}/unit</p>
+                    <a href="${p.productLink}" target="_blank" class="compare-btn-minimal">Compare Price</a>
+                </div>
             </div>`;
         grid.insertAdjacentHTML('beforeend', card);
     });
 }
 
-// 8. Budget Assistant Strategy
+// 5. Budget logic (Restored)
 function handleCalculateBudget() {
     const budget = document.getElementById('monthly-budget').value;
     const size = document.getElementById('household-size').value;
-    const resultDiv = document.getElementById('budget-results');
+    const resultBox = document.getElementById('budget-results');
 
     if (!budget || !size) return;
-    const ppp = Math.round(budget / size);
+    const perPerson = Math.round(budget / size);
 
-    resultDiv.innerHTML = `
-        <div class="premium-card" style="background:#f9f9f9; padding:20px; border-radius:15px; margin-top:20px;">
-            <h4>Monthly Strategy: ₹${ppp} per person</h4>
-            <ul style="margin-top:15px; text-align:left; padding-left:20px; font-size:0.9rem; color:#555;">
-                <li>Switch to store brands for staples to save up to 20%.</li>
-                <li>Compare Milk and Oil daily as these have high price volatility.</li>
+    resultBox.innerHTML = `
+        <div class="budget-strategy-card" style="background: var(--grey-100); padding: 30px; border-radius: 20px; border: 1px solid var(--grey-200); margin-top: 30px;">
+            <h3>AI Spending Strategy</h3>
+            <p>Target: ₹${perPerson} per person/month.</p>
+            <ul style="margin-top:15px; text-align:left; padding-left:20px; font-size:0.9rem; line-height:1.6;">
+                <li><strong>Dynamic Comparison:</strong> Use live search for Milk and Atta to capture 10% market variance.</li>
+                <li><strong>Bulk Advantage:</strong> Buying 5kg+ packs reduces the normalized unit rate by ~15%.</li>
             </ul>
-        </div>
-    `;
+        </div>`;
 }
 
-// Placeholder for Wishlist
-function renderWishlist() {
-    // Basic implementation for the sidebar box
-}
-function toggleWishlist() {
-    document.getElementById('wishlist-container').classList.toggle('hidden');
-}
+// 6. Header/Quick search
+function handleHeaderSearch(e) { if (e.key === 'Enter') { document.getElementById('item-search').value = document.getElementById('header-query').value; performSearch(); } }
+function quickSearch(item) { document.getElementById('item-search').value = item; performSearch(); }

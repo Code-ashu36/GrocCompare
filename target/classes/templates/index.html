@@ -3,66 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GrocCompare Pro | Premium Price Discovery</title>
+    <title>GrocCompare Pro | Premium Discovery</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
 
     <div id="splash-screen">
-        <div class="abstract-shape shape-1"></div>
-        <div class="abstract-shape shape-2"></div>
         <div class="splash-content">
             <div class="splash-logo">Groc<span>Compare</span></div>
             <p class="splash-tagline">Compare Smarter</p>
             <div class="minimal-loader">
                 <div class="loader-ring"></div>
             </div>
-            <p class="splash-micro-text">Preparing price comparison engine...</p>
+            <p class="splash-micro-text">Loading the best deals...</p>
         </div>
     </div>
 
-    <div id="app-content" class="fade-in-content">
-        <header class="main-header">
+    <div id="app-content" class="fade-in">
+        <header class="glass-header">
             <div class="header-inner">
                 <div class="minimal-logo" onclick="location.reload()">Groc<span>Compare</span></div>
-                <div class="header-search-bar">
+                <div class="header-search-container">
                     <input type="text" id="header-query" placeholder="Search brands..." onkeypress="handleHeaderSearch(event)">
                 </div>
-                <div class="header-actions">
-                    <span class="line-icon" id="dark-mode-toggle" title="Toggle Theme">🌓</span>
-                    <span class="line-icon" onclick="toggleWishlist()" title="Wishlist">♡</span>
+                <div class="header-icons">
+                    <span class="line-icon" id="dark-mode-toggle">🌓</span>
+                    <span class="line-icon" onclick="toggleWishlist()">♡</span>
                     <span class="line-icon">👤</span>
                 </div>
             </div>
         </header>
 
-        <section class="premium-hero">
+        <section class="hero-sky">
             <div class="hero-container">
                 <h1 class="hero-title">Find the best price.</h1>
-                <div class="hero-search-wrapper">
-                    <div class="search-pill">
-                        <select id="location-picker">
-                            <option value="Delhi">Delhi</option>
-                            <option value="Mumbai">Mumbai</option>
-                            <option value="Bangalore">Bangalore</option>
-                        </select>
-                        <input type="text" id="item-search" placeholder="Search products, brands, or categories">
-                        <button id="search-btn" class="search-action-btn">Search</button>
-                    </div>
+                <div class="main-search-pill">
+                    <select id="location-picker">
+                        <option value="Delhi">Delhi</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Bangalore">Bangalore</option>
+                    </select>
+                    <input type="text" id="item-search" placeholder="Search products, brands, or categories">
+                    <button id="search-btn" class="search-trigger">Search</button>
                 </div>
                 <div class="popular-chips">
                     <span class="chip-label">Popular Searches:</span>
-                    <button onclick="quickSearch('Milk')" class="pill-chip">Milk</button>
-                    <button onclick="quickSearch('Tomato')" class="pill-chip">Tomato</button>
-                    <button onclick="quickSearch('Atta')" class="pill-chip">Atta</button>
+                    <button onclick="quickSearch('Milk')" class="pill-btn accent-blue">Milk</button>
+                    <button onclick="quickSearch('Tomato')" class="pill-btn accent-purple">Tomato</button>
+                    <button onclick="quickSearch('Atta')" class="pill-btn accent-mint">Atta</button>
                 </div>
             </div>
         </section>
 
-        <main class="platform-container">
+        <main class="platform-layout">
             <aside class="sidebar-panel">
-                <div class="filter-group-box">
+                <div class="sidebar-group">
                     <h4>Navigation</h4>
                     <nav class="vertical-nav">
                         <button onclick="switchView('compare')" id="nav-compare" class="nav-link active">Comparison Engine</button>
@@ -70,66 +66,67 @@
                     </nav>
                 </div>
 
-                <div id="wishlist-container" class="filter-group-box hidden">
-                    <h4>Wishlist</h4>
-                    <div id="wishlist-items"></div>
-                </div>
-
-                <div class="filter-group-box">
+                <div class="sidebar-group">
                     <h4>Filters</h4>
                     <div class="filter-item">
-                        <span>In-stock Only</span>
-                        <label class="ios-switch">
+                        <span>Price Range</span>
+                        <input type="range" class="accent-range">
+                    </div>
+                    <div class="filter-item">
+                        <span>In-stock</span>
+                        <label class="toggle-switch">
                             <input type="checkbox" checked>
-                            <span class="ios-slider"></span>
+                            <span class="slider-round"></span>
                         </label>
                     </div>
+                </div>
+
+                <div id="wishlist-container" class="sidebar-group hidden">
+                    <h4>Saved Items</h4>
+                    <div id="wishlist-items"></div>
                 </div>
             </aside>
 
             <section class="results-viewport">
                 <div id="comparison-view">
-                    <div id="results-summary" class="mini-summary"></div>
+                    <div id="results-summary" class="summary-label"></div>
                     <div id="loader" class="hidden">
-                        <div class="loading-pulse"></div>
-                        <p class="loader-msg">Loading the best deals...</p>
+                        <div class="spinner-modern"></div>
                     </div>
-                    <div id="comparison-results" class="clean-grid"></div>
+                    <div id="comparison-results" class="accent-grid"></div>
                 </div>
 
                 <div id="budget-assistant" class="hidden">
-                    <div class="premium-card budget-coach">
+                    <div class="budget-card-premium">
                         <h2>💸 Smart Budget Coach</h2>
-                        <div class="budget-input-row">
+                        <div class="budget-form-row">
                             <input type="number" id="monthly-budget" placeholder="Budget (₹)">
                             <input type="number" id="household-size" placeholder="Family Size">
-                            <button class="primary-grey-btn" onclick="handleCalculateBudget()">Generate Strategy</button>
+                            <button class="action-btn-pastel" onclick="handleCalculateBudget()">Strategy</button>
                         </div>
-                        <div id="budget-results" class="strategy-display"></div>
+                        <div id="budget-results"></div>
                     </div>
                 </div>
             </section>
         </main>
 
-        <footer class="premium-footer">
-            <div class="footer-inner">
-                <div class="footer-brand">
+        <footer class="footer-premium">
+            <div class="footer-grid">
+                <div class="footer-info">
                     <div class="minimal-logo">Groc<span>Compare</span></div>
-                    <p>Experience minimal, elegant price discovery for the modern shopper.</p>
+                    <p>Premium price discovery engine with real-time normalization logic.</p>
                 </div>
-                <div class="footer-links-row">
-                    <div class="link-col">
-                        <h5>Engine</h5>
-                        <a href="#">Grocery</a><a href="#">Cabs</a><a href="#">Plans</a>
-                    </div>
-                    <div class="link-col">
-                        <h5>Support</h5>
-                        <a href="#">Help Center</a><a href="#">Privacy</a><a href="#">Terms</a>
-                    </div>
+                <div class="footer-links">
+                    <h5>Categories</h5>
+                    <a href="#">Grocery</a><a href="#">Electronics</a><a href="#">Cabs</a>
+                </div>
+                <div class="footer-links">
+                    <h5>Company</h5>
+                    <a href="#">About</a><a href="#">Privacy</a><a href="#">Contact</a>
                 </div>
             </div>
-            <div class="footer-legal">
-                &copy; 2025 GrocCompare. Minimalist Premium Price Engine.
+            <div class="footer-bottom">
+                &copy; 2025 GrocCompare Pro. Clean. Minimal. Smart.
             </div>
         </footer>
     </div>
