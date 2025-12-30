@@ -24,47 +24,46 @@ public class DiscoveryService {
 
     /**
      * CAB COMPARISON LOGIC
-     * Live search via SerpApi + Extraction via Gemini AI
+     * Uses robust extraction to handle conversational AI responses.
      */
     public List<CabResult> getCabFares(String from, String to) {
         List<CabResult> results = new ArrayList<>();
         try {
-            // 1. Get Live Search Data from SerpApi
             String serpUrl = "https://serpapi.com/search.json?q=Uber+Ola+Rapido+fare+from+" + 
                              from.replace(" ", "+") + "+to+" + to.replace(" ", "+") + 
                              "+India&api_key=" + serpApiKey;
             
             String searchResponse = restTemplate.getForObject(serpUrl, String.class);
             
-            // 2. Use Gemini to extract prices - Added STRICT formatting instructions
             String prompt = "Extract current cab fares from these search results: " + searchResponse + 
                             ". For " + from + " to " + to + ". RETURN ONLY A RAW JSON ARRAY. " +
-                            "Use these keys: platform, price, type, eta. Do not include markdown or prose.";
+                            "Use keys: platform, price, type, eta.";
 
             String aiRawResponse = callGemini(prompt);
-            String cleanJson = sanitizeJson(aiRawResponse); // Clean the response
+            String cleanJson = sanitizeJson(aiRawResponse); // Fixes 'JSONArray must start with ['
             
             JSONArray jsonArray = new JSONArray(cleanJson);
 
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject obj = jsonArray.getJSONObject(i);
+                // Safe data extraction to prevent type mismatch crashes
                 results.add(new CabResult(
-                    obj.getString("platform"),
-                    obj.getString("price"),
-                    obj.getString("type"),
-                    obj.getString("eta")
+                    obj.optString("platform", "Unknown"),
+                    String.valueOf(obj.get("price")), 
+                    obj.optString("type", "Standard"),
+                    obj.optString("eta", "Check app")
                 ));
             }
         } catch (Exception e) {
             System.err.println("Cab Discovery Error: " + e.getMessage());
-            results.add(new CabResult("Uber", "Checking...", "Standard", "Live Update Pending"));
+            results.add(new CabResult("Uber", "Checking...", "Standard", "Live Data Pending"));
         }
         return results;
     }
 
     /**
      * SUBSCRIPTION BUNDLE LOGIC
-     * Scans for hidden bundles (Jio, Airtel, etc.) using Gemini
+     * Handles mixed data types (Booleans/Strings) from AI responses.
      */
     public List<SubscriptionResult> getSubscriptionDeals(String platform) {
         List<SubscriptionResult> results = new ArrayList<>();
@@ -74,24 +73,22 @@ public class DiscoveryService {
             
             String searchResponse = restTemplate.getForObject(serpUrl, String.class);
             
-            // Added STRICT formatting instructions
-            String prompt = "Analyze these search results for " + platform + 
-                            " bundles in India: " + searchResponse + 
-                            ". Compare direct price vs bundles (like Jio/Airtel). RETURN ONLY A RAW JSON ARRAY. " +
-                            "Use these keys: platform, planName, price, bestDeal.";
+            String prompt = "Analyze results for " + platform + " bundles in India: " + searchResponse + 
+                            ". RETURN ONLY A RAW JSON ARRAY. Keys: platform, planName, price, bestDeal.";
 
             String aiRawResponse = callGemini(prompt);
-            String cleanJson = sanitizeJson(aiRawResponse); // Clean the response
+            String cleanJson = sanitizeJson(aiRawResponse);
             
             JSONArray jsonArray = new JSONArray(cleanJson);
 
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject obj = jsonArray.getJSONObject(i);
+                // FIXED: Using String.valueOf() to handle boolean 'true' vs string 'true'
                 results.add(new SubscriptionResult(
-                    obj.getString("platform"),
-                    obj.getString("planName"),
-                    obj.getString("price"),
-                    obj.getString("bestDeal")
+                    obj.optString("platform", platform),
+                    obj.optString("planName", "Standard Plan"),
+                    obj.optString("price", "Check App"),
+                    String.valueOf(obj.get("bestDeal")) 
                 ));
             }
         } catch (Exception e) {
@@ -101,30 +98,25 @@ public class DiscoveryService {
     }
 
     /**
-     * HELPER: Sanitizes the AI response to extract only the JSON part.
-     * Prevents "JSONArray text must start with [" error.
+     * STRENGTHENED SANITIZER:
+     * Extracts only the content inside [] brackets, ignoring AI conversational text.
      */
     private String sanitizeJson(String input) {
-        if (input.contains("```json")) {
-            input = input.substring(input.indexOf("```json") + 7);
-            input = input.substring(0, input.lastIndexOf("```"));
-        } else if (input.contains("```")) {
-            input = input.substring(input.indexOf("```") + 3);
-            input = input.substring(0, input.lastIndexOf("```"));
+        if (input == null) return "[]";
+        int start = input.indexOf("[");
+        int end = input.lastIndexOf("]");
+        if (start != -1 && end != -1 && end > start) {
+            return input.substring(start, end + 1);
         }
-        return input.trim();
+        return "[]";
     }
 
-    /**
-     * HELPER: Calls Gemini API to process raw web data
-     */
     private String callGemini(String prompt) {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + geminiApiKey;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // Sanitize the prompt for valid JSON transmission
         String escapedPrompt = prompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
         String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + escapedPrompt + "\" }] }] }";
 
