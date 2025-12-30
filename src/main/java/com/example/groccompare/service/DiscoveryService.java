@@ -20,7 +20,7 @@ public class DiscoveryService {
     @Value("${GEMINI_KEY}")
     private String geminiApiKey;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = new RestTemplate(); //new 
 
     /**
      * CAB COMPARISON LOGIC
