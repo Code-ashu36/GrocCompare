@@ -193,6 +193,16 @@ async function performSearch() {
         const response = await fetch(`/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`);
         const data = await response.json();
         allProducts = data.comparisonResults;
+
+        if (allProducts.length > 0) {
+            const prices = allProducts.map(p => p.currentPrice);
+            const slider = document.querySelector('.accent-range');
+            if (slider) {
+                slider.min = Math.floor(Math.min(...prices));
+                slider.max = Math.ceil(Math.max(...prices));
+                slider.value = slider.max;
+            }
+        }
         renderResults(allProducts);
     } catch (error) { console.error("Search failed", error); } finally { loader.classList.add('hidden'); }
 }
@@ -266,18 +276,33 @@ async function sendChatMessage() {
     } catch (err) { console.error(err); }
 }
 
+/**
+ * PERSONALIZED AI BUDGET STRATEGY
+ * logic to generate personalized strategy based on household spending
+ */
 function handleCalculateBudget() {
     const budget = document.getElementById('monthly-budget')?.value;
     const size = document.getElementById('household-size')?.value;
     const resultBox = document.getElementById('budget-results');
     if (!budget || !size || !resultBox) return;
+    
     const perPerson = Math.round(budget / size);
+    let strategy = "";
+
+    if (perPerson < 2500) {
+        strategy = "<li>Focus on 'Bharat' brand staples for lowest market rates.</li><li>Prioritize local mandi resets on Monday mornings.</li><li>Switch from 1kg to 10kg bulk packs for rice and flour.</li>";
+    } else if (perPerson < 6000) {
+        strategy = "<li>Compare Zepto vs Blinkit for dynamic price status drops.</li><li>Use loyalty points for cleaning and household essentials.</li><li>Track 'Best Deal' badges in the Comparison Engine.</li>";
+    } else {
+        strategy = "<li>Leverage organic direct-to-farm subscription models.</li><li>Focus on high-nutrient density items across premium platforms.</li><li>Automate restocks during 'Market Price' low phases.</li>";
+    }
 
     resultBox.innerHTML = `
         <div class="budget-strategy-card" style="background: var(--grey-100); padding: 40px; border-radius: 24px; border: 1px solid var(--grey-200); margin-top: 30px;">
-            <h3 style="font-size: 1.6rem; margin-bottom: 20px;">✅ AI Spending Strategy</h3>
+            <h3 style="font-size: 1.6rem; margin-bottom: 20px;">✅ Personalized Strategy (₹${perPerson}/Person)</h3>
             <p style="font-size: 1.2rem; margin-bottom: 15px;">Monthly Target: <strong>₹${perPerson}</strong> per person.</p>
             <ul style="text-align:left; padding-left:25px; font-size:1.1rem; line-height:1.8;">
+                ${strategy}
                 <li>Compare normalized rates to find hidden bulk savings.</li>
                 <li>Track weekly Monday resets for the lowest market deals.</li>
             </ul>
