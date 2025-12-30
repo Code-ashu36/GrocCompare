@@ -189,26 +189,28 @@ body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--
 }
 .compare-btn-minimal:hover { background: var(--text-222); color: var(--white); border-color: var(--text-222); }
 
-/* --- Chat Container (RESTORED FIXED FLOATING) --- */
+/* --- Chat Container (STRICT FLOATING RELATIVE TO VIEWPORT) --- */
 #ai-chat-container {
     position: fixed !important;
     bottom: 30px !important;
     right: 30px !important;
-    z-index: 10000 !important; /* Higher z-index to stay above footer */
-    display: block !important;
+    z-index: 10000 !important;
+    width: 60px !important;
+    height: 60px !important;
+    left: auto !important;
+    top: auto !important;
 }
 
 #chat-toggle-btn {
     width: 60px;
     height: 60px;
-    background: #333333 !important; /* Restored Black background */
+    background: #333333 !important; /* Premium Black */
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    transition: transform 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
 #chat-toggle-btn span {
@@ -225,17 +227,19 @@ body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--
     border: 1px solid var(--grey-200);
     border-radius: 24px;
     box-shadow: var(--shadow-light);
-    z-index: 10001;
+    z-index: 10001 !important;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    left: auto !important;
+    top: auto !important;
 }
 
 /* RESTORED: Chat Header with Bold Font and Separator Line */
 .chat-header {
     padding: 20px;
-    border-bottom: 1px solid var(--grey-200) !important; /* Restored line below header */
-    font-weight: 700 !important; /* Restored Boldness */
+    border-bottom: 1px solid var(--grey-200) !important;
+    font-weight: 700 !important; /* Bold */
     display: flex;
     justify-content: space-between;
     align-items: center;
