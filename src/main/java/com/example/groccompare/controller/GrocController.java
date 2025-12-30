@@ -20,7 +20,7 @@ public class GrocController {
     @Value("${SERPAPI_KEY}")
     private String API_KEY;
 
-    @Value("${GEMINI_API_KEY}") 
+    @Value("${GEMINI_KEY}") 
     private String GEMINI_API_KEY;
 
     @GetMapping("/")
