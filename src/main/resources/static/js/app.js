@@ -112,7 +112,7 @@ function triggerFadeIn(element) {
 }
 
 /**
- * FIXED: Cab Search with Identification Logic
+ * FIXED: Cab Search with Functional "Book Now" Buttons
  */
 async function searchCabs() {
     const from = document.getElementById('cab-from')?.value;
@@ -136,17 +136,19 @@ async function searchCabs() {
         const data = await response.json();
         resultsGrid.innerHTML = '';
         
-        // Error Identification: Check if backend sent an empty array
         if (!data || data.length === 0) {
             resultsGrid.innerHTML = `
                 <div style="grid-column: 1/-1; text-align:center; padding: 40px; background: var(--grey-100); border-radius: 20px;">
                     <h3>Identification: No Fares Found</h3>
-                    <p>Gemini AI could not find specific pricing for this route in the search snippets. Please try major landmarks (e.g., 'IGI Airport' to 'Connaught Place').</p>
+                    <p>Gemini AI could not find specific pricing for this route. Try major landmarks.</p>
                 </div>`;
             return;
         }
 
         data.forEach(cab => {
+            // Generate Universal Deep Link for Booking
+            const bookingUrl = `https://m.uber.com/looking?pickup=${encodeURIComponent(from)}&destination=${encodeURIComponent(to)}`;
+            
             resultsGrid.insertAdjacentHTML('beforeend', `
                 <div class="product-card" style="--card-accent: var(--accent-mint)">
                     <div class="card-body">
@@ -154,21 +156,18 @@ async function searchCabs() {
                         <h3 style="margin: 10px 0;">${cab.type || 'Standard'}</h3>
                         <p class="price-large">₹${cab.price || '---'}</p>
                         <p class="rate-muted">ETA: ${cab.eta || 'Check App'}</p>
-                        <button class="compare-btn-minimal">Book Now</button>
+                        <a href="${bookingUrl}" target="_blank" class="compare-btn-minimal" style="text-decoration:none; display:block;">Book Now</a>
                     </div>
                 </div>`);
         });
     } catch (err) { 
         console.error("Cab search identification failed", err);
-        resultsGrid.innerHTML = `
-            <div style="grid-column: 1/-1; text-align:center; padding: 20px; color: #dc3545; border: 1px solid #ffcccc; border-radius: 15px;">
-                <strong>Identification Error:</strong> ${err.message}. Check your Railway logs for 'JSONArray must start with [' error.
-            </div>`;
+        resultsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 20px; color: #dc3545;"><strong>Error:</strong> ${err.message}</div>`;
     }
 }
 
 /**
- * FIXED: Subscription Search now properly renders in the results grid
+ * FIXED: Subscription Search with Functional "Get Deal" Buttons
  */
 async function searchSubs() {
     const query = document.getElementById('sub-query')?.value;
@@ -183,11 +182,22 @@ async function searchSubs() {
         resultsGrid.innerHTML = '';
         
         if (!data || data.length === 0) {
-            resultsGrid.innerHTML = '<p class="summary-label" style="grid-column: 1/-1; text-align:center;">No subscription deals found for this query.</p>';
+            resultsGrid.innerHTML = '<p class="summary-label" style="grid-column: 1/-1; text-align:center;">No subscription deals found.</p>';
             return;
         }
 
+        // Mapping platform names to official deal pages
+        const dealMap = {
+            "JIO": "https://www.jio.com/selfcare/plans/mobility/ott-plans/",
+            "AIRTEL": "https://www.airtel.in/xstream/plans",
+            "NETFLIX": "https://www.netflix.com/signup",
+            "PRIME": "https://www.amazon.in/amazonprime"
+        };
+
         data.forEach(sub => {
+            const platformKey = (sub.platform || "").toUpperCase();
+            const dealUrl = dealMap[platformKey] || `https://www.google.com/search?q=${encodeURIComponent(sub.platform + " " + sub.planName)}`;
+
             resultsGrid.insertAdjacentHTML('beforeend', `
                 <div class="product-card" style="--card-accent: var(--accent-purple)">
                     <div class="card-body">
@@ -195,13 +205,13 @@ async function searchSubs() {
                         <h3 style="margin: 10px 0;">${sub.planName}</h3>
                         <p class="price-large">${sub.price}</p>
                         <p class="rate-muted" style="color:#6a1b9a; font-weight:bold;">${sub.bestDeal}</p>
-                        <button class="compare-btn-minimal">Get Deal</button>
+                        <a href="${dealUrl}" target="_blank" class="compare-btn-minimal" style="text-decoration:none; display:block;">Get Deal</a>
                     </div>
                 </div>`);
         });
     } catch (err) { 
         console.error("Subscription search failed", err);
-        resultsGrid.innerHTML = '<p class="summary-label" style="grid-column: 1/-1; text-align:center;">Discovery engine busy. Please wait.</p>';
+        resultsGrid.innerHTML = '<p class="summary-label">Discovery engine busy.</p>';
     }
 }
 
