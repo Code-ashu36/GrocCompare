@@ -112,7 +112,7 @@ function triggerFadeIn(element) {
 }
 
 /**
- * FIXED: Cab Search with Functional "Book Now" Buttons
+ * FIXED: Cab Search with Functional Deep Links and Corrected Pricing
  */
 async function searchCabs() {
     const from = document.getElementById('cab-from')?.value;
@@ -146,15 +146,24 @@ async function searchCabs() {
         }
 
         data.forEach(cab => {
-            // Generate Universal Deep Link for Booking
-            const bookingUrl = `https://m.uber.com/looking?pickup=${encodeURIComponent(from)}&destination=${encodeURIComponent(to)}`;
+            // FIXED: Universal Deep Links for Uber and Ola
+            let bookingUrl;
+            const platform = (cab.platform || "").toUpperCase();
+
+            if (platform.includes("UBER")) {
+                bookingUrl = `https://m.uber.com/looking?pickup_address=${encodeURIComponent(from)}&destination_address=${encodeURIComponent(to)}`;
+            } else if (platform.includes("OLA")) {
+                bookingUrl = `https://www.google.com/search?q=book+Ola+from+${encodeURIComponent(from)}+to+${encodeURIComponent(to)}`;
+            } else {
+                bookingUrl = `https://www.google.com/search?q=${encodeURIComponent(cab.platform + " booking " + from + " to " + to)}`;
+            }
             
             resultsGrid.insertAdjacentHTML('beforeend', `
                 <div class="product-card" style="--card-accent: var(--accent-mint)">
                     <div class="card-body">
                         <div class="deal-badge" style="background: #f0fff6">${cab.platform || 'Cab'}</div>
                         <h3 style="margin: 10px 0;">${cab.type || 'Standard'}</h3>
-                        <p class="price-large">₹${cab.price || '---'}</p>
+                        <p class="price-large">${cab.price || '---'}</p>
                         <p class="rate-muted">ETA: ${cab.eta || 'Check App'}</p>
                         <a href="${bookingUrl}" target="_blank" class="compare-btn-minimal" style="text-decoration:none; display:block;">Book Now</a>
                     </div>
@@ -167,7 +176,7 @@ async function searchCabs() {
 }
 
 /**
- * FIXED: Subscription Search with Functional "Get Deal" Buttons
+ * FIXED: Subscription Search with Corrected Landing Pages (Airtel/Disney+)
  */
 async function searchSubs() {
     const query = document.getElementById('sub-query')?.value;
@@ -186,17 +195,19 @@ async function searchSubs() {
             return;
         }
 
-        // Mapping platform names to official deal pages
+        // FIXED: Updated deal map with valid landing pages to prevent 404s
         const dealMap = {
             "JIO": "https://www.jio.com/selfcare/plans/mobility/ott-plans/",
-            "AIRTEL": "https://www.airtel.in/xstream/plans",
+            "AIRTEL": "https://www.airtel.in/recharge-online", 
             "NETFLIX": "https://www.netflix.com/signup",
-            "PRIME": "https://www.amazon.in/amazonprime"
+            "PRIME": "https://www.amazon.in/amazonprime",
+            "DISNEY+": "https://www.hotstar.com/in/subscribe/offers",
+            "JIOHOTSTAR": "https://www.jio.com/en-in/jio-hotstar-plans"
         };
 
         data.forEach(sub => {
-            const platformKey = (sub.platform || "").toUpperCase();
-            const dealUrl = dealMap[platformKey] || `https://www.google.com/search?q=${encodeURIComponent(sub.platform + " " + sub.planName)}`;
+            const platformKey = (sub.platform || "").toUpperCase().replace(/\s/g, ''); 
+            const dealUrl = dealMap[platformKey] || `https://www.google.com/search?q=${encodeURIComponent(sub.platform + " " + sub.planName + " India deal")}`;
 
             resultsGrid.insertAdjacentHTML('beforeend', `
                 <div class="product-card" style="--card-accent: var(--accent-purple)">

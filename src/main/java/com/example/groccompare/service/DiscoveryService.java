@@ -40,7 +40,7 @@ public class DiscoveryService {
         String prompt = "Search results context: " + searchResponse + 
                         "\nTask: Extract specific cab fares for a ride from " + from + " to " + to + "." +
                         "\nRules:" +
-                        "\n1. If a specific fare is found in the snippets, extract it." +
+                        "\n1. If a specific fare is found in the snippets, extract it. Remove any existing Currency symbols." +
                         "\n2. If NO specific fare is found, calculate a numeric estimate based on standard India rates (~₹18/km)." +
                         "\n3. NEVER return vague text like 'Use price estimator'. Return a numeric range or price." +
                         "\n4. If data is totally missing, provide a logical estimate based on typical distance." +
@@ -79,12 +79,17 @@ public class DiscoveryService {
         List<SubscriptionResult> results = new ArrayList<>();
         try {
             String serpUrl = "https://serpapi.com/search.json?q=" + platform.replace(" ", "+") + 
-                             "+subscription+bundles+India+Jio+Airtel+offers&api_key=" + serpApiKey;
+                             "+subscription+bundles+India+Jio+Airtel+offers+price+list&api_key=" + serpApiKey;
             
             String searchResponse = restTemplate.getForObject(serpUrl, String.class);
             
+            // IMPROVED PROMPT: Prevents 'Not Specified' and extracts clear pricing logic
             String prompt = "Analyze results for " + platform + " bundles in India: " + searchResponse + 
-                            ". RETURN ONLY A RAW JSON ARRAY. Keys: platform, planName, price, bestDeal.";
+                            "\nRules:" +
+                            "\n1. If specific price is found (e.g. 199, 1499), extract it. Remove Currency symbols." +
+                            "\n2. If no price is found, look for typical bundle pricing in the text snippets." +
+                            "\n3. If STILL no price is found, DO NOT write 'Not specified'. Write 'See Site' or 'Plan Variable'." +
+                            "\n4. RETURN ONLY A RAW JSON ARRAY. Keys: platform, planName, price, bestDeal.";
 
             String aiRawResponse = callGemini(prompt);
             String cleanJson = sanitizeJson(aiRawResponse);
