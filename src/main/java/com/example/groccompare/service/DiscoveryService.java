@@ -27,39 +27,43 @@ public class DiscoveryService {
      * Uses robust extraction to handle conversational AI responses.
      */
     public List<CabResult> getCabFares(String from, String to) {
-        List<CabResult> results = new ArrayList<>();
-        try {
-            String serpUrl = "https://serpapi.com/search.json?q=Uber+Ola+Rapido+fare+from+" + 
-                             from.replace(" ", "+") + "+to+" + to.replace(" ", "+") + 
-                             "+India&api_key=" + serpApiKey;
-            
-            String searchResponse = restTemplate.getForObject(serpUrl, String.class);
-            
-            String prompt = "Extract current cab fares from these search results: " + searchResponse + 
-                            ". For " + from + " to " + to + ". RETURN ONLY A RAW JSON ARRAY. " +
-                            "Use keys: platform, price, type, eta.";
+    List<CabResult> results = new ArrayList<>();
+    try {
+        String serpUrl = "https://serpapi.com/search.json?q=Uber+Ola+Rapido+fare+from+" + 
+                         from.replace(" ", "+") + "+to+" + to.replace(" ", "+") + 
+                         "+India&api_key=" + serpApiKey;
+        
+        String searchResponse = restTemplate.getForObject(serpUrl, String.class);
+        
+        // Use a stricter prompt to minimize AI conversation
+        String prompt = "Extract current cab fares from these search results: " + searchResponse + 
+                        ". For " + from + " to " + to + ". RETURN ONLY A RAW JSON ARRAY. " +
+                        "Use keys: platform, price, type, eta.";
 
-            String aiRawResponse = callGemini(prompt);
-            String cleanJson = sanitizeJson(aiRawResponse); // Fixes 'JSONArray must start with ['
-            
-            JSONArray jsonArray = new JSONArray(cleanJson);
+        String aiRawResponse = callGemini(prompt);
+        
+        // FIXED: Sanitizes the response to find the start of the JSON array
+        String cleanJson = sanitizeJson(aiRawResponse); 
+        
+        JSONArray jsonArray = new JSONArray(cleanJson);
 
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject obj = jsonArray.getJSONObject(i);
-                // Safe data extraction to prevent type mismatch crashes
-                results.add(new CabResult(
-                    obj.optString("platform", "Unknown"),
-                    String.valueOf(obj.get("price")), 
-                    obj.optString("type", "Standard"),
-                    obj.optString("eta", "Check app")
-                ));
-            }
-        } catch (Exception e) {
-            System.err.println("Cab Discovery Error: " + e.getMessage());
-            results.add(new CabResult("Uber", "Checking...", "Standard", "Live Data Pending"));
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject obj = jsonArray.getJSONObject(i);
+            
+            // FIXED: Using optString and String.valueOf to prevent type crashes
+            results.add(new CabResult(
+                obj.optString("platform", "Unknown"),
+                String.valueOf(obj.get("price")), 
+                obj.optString("type", "Standard"),
+                obj.optString("eta", "Check app")
+            ));
         }
-        return results;
+    } catch (Exception e) {
+        System.err.println("Cab Discovery Error: " + e.getMessage());
+        results.add(new CabResult("Uber", "Checking...", "Standard", "Update Pending"));
     }
+    return results;
+}
 
     /**
      * SUBSCRIPTION BUNDLE LOGIC
