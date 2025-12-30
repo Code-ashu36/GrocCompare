@@ -21,8 +21,8 @@ body.dark-mode {
     --shadow-light: 0 10px 40px rgba(0,0,0,0.4);
 }
 
-/* --- Smooth Transitions --- */
-#comparison-view, #budget-assistant {
+/* --- Smooth Transitions (Updated for 4 views) --- */
+#comparison-view, #budget-assistant, #cabs-view, #subs-view {
     transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 1;
     transform: translateY(0);
@@ -50,7 +50,6 @@ body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--
 }
 .header-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; }
 
-/* Added User Profile Classes */
 .user-profile-wrapper {
     display: flex;
     align-items: center;
@@ -88,6 +87,56 @@ body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--
     outline: none; color: var(--text-222); 
 }
 
+/* --- Discovery Engine Cards (Shared across Cabs/Subs/Budget) --- */
+.budget-card-premium {
+    background: var(--white);
+    padding: 50px;
+    border-radius: 32px;
+    border: 1px solid var(--grey-200);
+    box-shadow: var(--shadow-light);
+    margin-bottom: 40px;
+}
+
+.budget-card-premium h2 {
+    font-size: 1.8rem;
+    font-weight: 300;
+    margin-bottom: 30px;
+}
+
+.budget-form-row {
+    display: flex;
+    gap: 15px;
+    background: var(--grey-100);
+    padding: 10px;
+    border-radius: 20px;
+}
+
+.budget-form-row input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 15px 20px;
+    outline: none;
+    font-size: 1rem;
+    color: var(--text-222);
+}
+
+.action-btn-pastel {
+    background: var(--text-222);
+    color: var(--white);
+    border: none;
+    padding: 0 30px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.action-btn-pastel:hover {
+    transform: scale(1.02);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
 /* --- Hero Section --- */
 .hero-sky { background: linear-gradient(180deg, var(--white) 0%, var(--grey-100) 100%); padding: 100px 20px; text-align: center; }
 .hero-title { font-weight: 300; font-size: 3rem; margin-bottom: 30px; letter-spacing: -1px; color: var(--text-222); }
@@ -104,11 +153,18 @@ body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--
 .platform-layout { max-width: 1400px; margin: 50px auto; display: grid; grid-template-columns: 280px 1fr; gap: 40px; padding: 0 40px; }
 .sidebar-panel { background: var(--grey-100); padding: 30px; border-radius: 24px; border: 1px solid var(--grey-200); height: fit-content; }
 .sidebar-panel h4 { color: var(--text-555); font-size: 0.8rem; text-transform: uppercase; margin-bottom: 15px; }
-.nav-link { display: block; width: 100%; text-align: left; padding: 12px; border: none; background: transparent; cursor: pointer; border-radius: 12px; color: var(--text-555); margin-bottom: 5px; }
+
+.nav-link { 
+    display: block; width: 100%; text-align: left; padding: 12px; border: none; 
+    background: transparent; cursor: pointer; border-radius: 12px; color: var(--text-555); margin-bottom: 5px; 
+    transition: 0.3s;
+}
 .nav-link.active { background: var(--white); color: var(--text-222); font-weight: 600; box-shadow: var(--shadow-light); }
+.nav-link:hover:not(.active) { background: var(--grey-200); }
 
 /* --- Grid & Cards --- */
 .accent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
+
 .product-card {
     background: var(--white); border-radius: 20px; border: 1px solid var(--grey-200);
     overflow: hidden; transition: 0.4s; display: flex; flex-direction: column;
@@ -122,13 +178,15 @@ body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--
 .card-img-block img { max-height: 100%; max-width: 100%; object-fit: contain; }
 
 .card-body { padding: 25px; flex: 1; display: flex; flex-direction: column; background: var(--white); }
-.deal-badge { background: #f0fff6; color: #2d5a2d; padding: 4px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; width: fit-content; margin-bottom: 15px; }
+.deal-badge { padding: 4px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; width: fit-content; margin-bottom: 15px; }
 .price-large { font-size: 1.6rem; font-weight: 800; margin-bottom: 5px; color: var(--text-222); }
+.rate-muted { font-size: 0.8rem; color: var(--text-555); margin-bottom: 25px; }
 
 .compare-btn-minimal {
     text-decoration: none; text-align: center; border: 1px solid var(--grey-200);
     padding: 12px; border-radius: 12px; color: var(--text-222); font-weight: 600;
     margin-top: auto; transition: 0.3s; background: var(--white);
+    cursor: pointer;
 }
 .compare-btn-minimal:hover { background: var(--text-222); color: var(--white); border-color: var(--text-222); }
 
@@ -137,6 +195,17 @@ body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--
 .footer-grid { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 50px; }
 .footer-bottom { text-align: center; margin-top: 60px; font-size: 0.8rem; color: var(--text-555); opacity: 0.7; }
 
+/* --- Utility & Loading --- */
 .hidden { display: none !important; }
-.fade-in { animation: fadeIn 1s ease forwards; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fadeIn 0.6s ease forwards; }
+
+@keyframes fadeIn { 
+    from { opacity: 0; transform: translateY(10px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+/* Modern Spinner for AI Processing */
+.spinner-modern {
+    width: 30px; height: 30px; border: 3px solid var(--grey-200); border-top-color: var(--text-222);
+    border-radius: 50%; animation: spin 0.8s linear infinite; margin: 40px auto;
+}
