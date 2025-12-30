@@ -14,8 +14,6 @@ window.addEventListener('load', () => {
             splash.style.opacity = '0';
             setTimeout(() => {
                 splash.classList.add('hidden');
-                
-                // AUTH GUARD: Redirect if user is not authenticated
                 if (!appContent) {
                     window.location.href = "/login";
                 } else {
@@ -28,7 +26,6 @@ window.addEventListener('load', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Check if elements exist before adding listeners to avoid null errors
     const themeBtn = document.getElementById('dark-mode-toggle');
     if (themeBtn) {
         themeBtn.onclick = () => {
@@ -49,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Chat Enter Listener
     const chatInput = document.getElementById('chat-input');
     if (chatInput) {
         chatInput.addEventListener('keypress', (e) => {
@@ -63,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Smooth View Switcher (UPDATED for Cabs and Subscriptions)
 function switchView(viewId) {
     const compareView = document.getElementById('comparison-view');
     const budgetView = document.getElementById('budget-assistant');
@@ -80,8 +75,6 @@ function switchView(viewId) {
 
     setTimeout(() => {
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        
-        // Hide all views initially
         [compareView, budgetView, cabsView, subsView].forEach(v => v.classList.add('hidden'));
 
         if (viewId === 'budget') {
@@ -111,7 +104,6 @@ function switchView(viewId) {
     }, 300);
 }
 
-// Animation Helper
 function triggerFadeIn(element) {
     setTimeout(() => {
         element.style.opacity = '1';
@@ -120,7 +112,7 @@ function triggerFadeIn(element) {
 }
 
 /**
- * CAB SEARCH LOGIC (NEW)
+ * FIXED: Cab Search now properly renders in the results grid
  */
 async function searchCabs() {
     const from = document.getElementById('cab-from')?.value;
@@ -134,23 +126,27 @@ async function searchCabs() {
         const response = await fetch(`/api/cabs/compare?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
         const data = await response.json();
         resultsGrid.innerHTML = '';
+        
         data.forEach(cab => {
             resultsGrid.insertAdjacentHTML('beforeend', `
-                <div class="product-card" style="--card-accent: #e4fff3">
+                <div class="product-card" style="--card-accent: var(--accent-mint)">
                     <div class="card-body">
                         <div class="deal-badge" style="background: #f0fff6">${cab.platform}</div>
-                        <h3>${cab.type}</h3>
+                        <h3 style="margin: 10px 0;">${cab.type}</h3>
                         <p class="price-large">₹${cab.price}</p>
                         <p class="rate-muted">ETA: ${cab.eta}</p>
                         <button class="compare-btn-minimal">Book Now</button>
                     </div>
                 </div>`);
         });
-    } catch (err) { console.error("Cab search failed", err); }
+    } catch (err) { 
+        console.error("Cab search failed", err);
+        resultsGrid.innerHTML = '<p class="summary-label">Search unavailable. Check your connection.</p>';
+    }
 }
 
 /**
- * SUBSCRIPTION SEARCH LOGIC (NEW)
+ * FIXED: Subscription Search now properly renders in the results grid
  */
 async function searchSubs() {
     const query = document.getElementById('sub-query')?.value;
@@ -163,19 +159,23 @@ async function searchSubs() {
         const response = await fetch(`/api/subs/compare?query=${encodeURIComponent(query)}`);
         const data = await response.json();
         resultsGrid.innerHTML = '';
+        
         data.forEach(sub => {
             resultsGrid.insertAdjacentHTML('beforeend', `
-                <div class="product-card" style="--card-accent: #ebe5ff">
+                <div class="product-card" style="--card-accent: var(--accent-purple)">
                     <div class="card-body">
                         <div class="deal-badge" style="background: rgba(0,0,0,0.05)">${sub.platform}</div>
-                        <h3>${sub.planName}</h3>
+                        <h3 style="margin: 10px 0;">${sub.planName}</h3>
                         <p class="price-large">${sub.price}</p>
                         <p class="rate-muted" style="color:#6a1b9a; font-weight:bold;">${sub.bestDeal}</p>
                         <button class="compare-btn-minimal">Get Deal</button>
                     </div>
                 </div>`);
         });
-    } catch (err) { console.error("Subscription search failed", err); }
+    } catch (err) { 
+        console.error("Subscription search failed", err);
+        resultsGrid.innerHTML = '<p class="summary-label">Discovery engine busy. Please wait.</p>';
+    }
 }
 
 async function performSearch() {
@@ -193,16 +193,6 @@ async function performSearch() {
         const response = await fetch(`/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`);
         const data = await response.json();
         allProducts = data.comparisonResults;
-
-        if (allProducts.length > 0) {
-            const prices = allProducts.map(p => p.currentPrice);
-            const slider = document.querySelector('.accent-range');
-            if (slider) {
-                slider.min = Math.floor(Math.min(...prices));
-                slider.max = Math.ceil(Math.max(...prices));
-                slider.value = slider.max;
-            }
-        }
         renderResults(allProducts);
     } catch (error) { console.error("Search failed", error); } finally { loader.classList.add('hidden'); }
 }
