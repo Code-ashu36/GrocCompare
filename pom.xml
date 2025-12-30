@@ -6,7 +6,8 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.4.1</version>
-        <relativePath/> </parent>
+        <relativePath/> 
+    </parent>
     <groupId>com.example</groupId>
     <artifactId>groccompare</artifactId>
     <version>0.0.1-SNAPSHOT</version>
@@ -44,8 +45,8 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.17.2</version>
-        </dependency>
+            <version>1.21.2</version> </dependency>
+        
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -53,8 +54,7 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20231013</version>
-        </dependency>
+            <version>20251224</version> </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

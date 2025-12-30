@@ -69,6 +69,8 @@
                     <h4>Navigation</h4>
                     <nav class="vertical-nav">
                         <button onclick="switchView('compare')" id="nav-compare" class="nav-link active">Comparison Engine</button>
+                        <button onclick="switchView('cabs')" id="nav-cabs" class="nav-link">Cab Search</button>
+                        <button onclick="switchView('subs')" id="nav-subs" class="nav-link">Subscriptions</button>
                         <button onclick="switchView('budget')" id="nav-budget" class="nav-link">Budget Assistant</button>
                     </nav>
                 </div>
@@ -101,6 +103,29 @@
                         <div class="spinner-modern"></div>
                     </div>
                     <div id="comparison-results" class="accent-grid"></div>
+                </div>
+
+                <div id="cabs-view" class="hidden">
+                    <div class="budget-card-premium">
+                        <h2>🚖 Real-time Cab Compare</h2>
+                        <div class="budget-form-row">
+                            <input type="text" id="cab-from" placeholder="Pickup (Source)">
+                            <input type="text" id="cab-to" placeholder="Drop (Destination)">
+                            <button class="action-btn-pastel" onclick="searchCabs()">Find Fares</button>
+                        </div>
+                        <div id="cab-results-grid" class="accent-grid" style="margin-top: 30px;"></div>
+                    </div>
+                </div>
+
+                <div id="subs-view" class="hidden">
+                    <div class="budget-card-premium">
+                        <h2>📺 Premium Bundle Finder</h2>
+                        <div class="budget-form-row">
+                            <input type="text" id="sub-query" placeholder="e.g. Netflix, YouTube, Disney+">
+                            <button class="action-btn-pastel" onclick="searchSubs()">Compare Deals</button>
+                        </div>
+                        <div id="subs-results-grid" class="accent-grid" style="margin-top: 30px;"></div>
+                    </div>
                 </div>
 
                 <div id="budget-assistant" class="hidden">

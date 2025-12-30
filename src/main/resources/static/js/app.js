@@ -1,6 +1,6 @@
 /**
  * GrocCompare Pro | Premium Logic Engine
- * UPDATED: Authentication Guard & Null-Safe Listeners
+ * UPDATED: Multi-Engine Viewport & Discovery APIs
  */
 
 let allProducts = []; 
@@ -63,42 +63,119 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Smooth View Switcher
+// Smooth View Switcher (UPDATED for Cabs and Subscriptions)
 function switchView(viewId) {
     const compareView = document.getElementById('comparison-view');
     const budgetView = document.getElementById('budget-assistant');
+    const cabsView = document.getElementById('cabs-view');
+    const subsView = document.getElementById('subs-view');
     const hero = document.querySelector('.hero-sky');
 
-    if (!compareView || !budgetView) return; // Guard for non-logged in state
+    if (!compareView || !budgetView || !cabsView || !subsView) return; 
 
-    [compareView, budgetView].forEach(el => {
+    [compareView, budgetView, cabsView, subsView].forEach(el => {
         el.style.opacity = '0';
         el.style.transform = 'translateY(10px)';
     });
 
     setTimeout(() => {
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        
+        // Hide all views initially
+        [compareView, budgetView, cabsView, subsView].forEach(v => v.classList.add('hidden'));
 
         if (viewId === 'budget') {
-            compareView.classList.add('hidden');
             budgetView.classList.remove('hidden');
             if(hero) hero.classList.add('hidden');
             document.getElementById('nav-budget').classList.add('active');
-            setTimeout(() => {
-                budgetView.style.opacity = '1';
-                budgetView.style.transform = 'translateY(0)';
-            }, 50);
-        } else {
+            triggerFadeIn(budgetView);
+        } 
+        else if (viewId === 'cabs') {
+            cabsView.classList.remove('hidden');
+            if(hero) hero.classList.add('hidden');
+            document.getElementById('nav-cabs').classList.add('active');
+            triggerFadeIn(cabsView);
+        }
+        else if (viewId === 'subs') {
+            subsView.classList.remove('hidden');
+            if(hero) hero.classList.add('hidden');
+            document.getElementById('nav-subs').classList.add('active');
+            triggerFadeIn(subsView);
+        }
+        else {
             compareView.classList.remove('hidden');
-            budgetView.classList.add('hidden');
             if(hero) hero.classList.remove('hidden');
             document.getElementById('nav-compare').classList.add('active');
-            setTimeout(() => {
-                compareView.style.opacity = '1';
-                compareView.style.transform = 'translateY(0)';
-            }, 50);
+            triggerFadeIn(compareView);
         }
     }, 300);
+}
+
+// Animation Helper
+function triggerFadeIn(element) {
+    setTimeout(() => {
+        element.style.opacity = '1';
+        element.style.transform = 'translateY(0)';
+    }, 50);
+}
+
+/**
+ * CAB SEARCH LOGIC (NEW)
+ */
+async function searchCabs() {
+    const from = document.getElementById('cab-from')?.value;
+    const to = document.getElementById('cab-to')?.value;
+    const resultsGrid = document.getElementById('cab-results-grid');
+
+    if (!from || !to || !resultsGrid) return;
+    resultsGrid.innerHTML = '<div class="spinner-modern"></div>';
+
+    try {
+        const response = await fetch(`/api/cabs/compare?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+        const data = await response.json();
+        resultsGrid.innerHTML = '';
+        data.forEach(cab => {
+            resultsGrid.insertAdjacentHTML('beforeend', `
+                <div class="product-card" style="--card-accent: #e4fff3">
+                    <div class="card-body">
+                        <div class="deal-badge" style="background: #f0fff6">${cab.platform}</div>
+                        <h3>${cab.type}</h3>
+                        <p class="price-large">₹${cab.price}</p>
+                        <p class="rate-muted">ETA: ${cab.eta}</p>
+                        <button class="compare-btn-minimal">Book Now</button>
+                    </div>
+                </div>`);
+        });
+    } catch (err) { console.error("Cab search failed", err); }
+}
+
+/**
+ * SUBSCRIPTION SEARCH LOGIC (NEW)
+ */
+async function searchSubs() {
+    const query = document.getElementById('sub-query')?.value;
+    const resultsGrid = document.getElementById('subs-results-grid');
+
+    if (!query || !resultsGrid) return;
+    resultsGrid.innerHTML = '<div class="spinner-modern"></div>';
+
+    try {
+        const response = await fetch(`/api/subs/compare?query=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        resultsGrid.innerHTML = '';
+        data.forEach(sub => {
+            resultsGrid.insertAdjacentHTML('beforeend', `
+                <div class="product-card" style="--card-accent: #ebe5ff">
+                    <div class="card-body">
+                        <div class="deal-badge" style="background: rgba(0,0,0,0.05)">${sub.platform}</div>
+                        <h3>${sub.planName}</h3>
+                        <p class="price-large">${sub.price}</p>
+                        <p class="rate-muted" style="color:#6a1b9a; font-weight:bold;">${sub.bestDeal}</p>
+                        <button class="compare-btn-minimal">Get Deal</button>
+                    </div>
+                </div>`);
+        });
+    } catch (err) { console.error("Subscription search failed", err); }
 }
 
 async function performSearch() {

@@ -22,7 +22,13 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
+                // Publicly accessible assets and pages
                 .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**").permitAll()
+                
+                // Protect the discovery APIs - only logged-in users can compare Cabs/Subs
+                .requestMatchers("/api/**").authenticated() 
+                
+                // Everything else requires authentication
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
@@ -32,7 +38,7 @@ public class SecurityConfig {
             )
             .logout(logout -> logout
                 .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout") // Redirect to login on logout
+                .logoutSuccessUrl("/login?logout")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .permitAll()
