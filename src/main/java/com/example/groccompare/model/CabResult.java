@@ -6,7 +6,10 @@ public class CabResult {
     private String type;     // e.g., Sedan, Bike
     private String eta;      // e.g., 5 mins
 
-    // Constructor
+    // Default Constructor (Required for JSON Mapping)
+    public CabResult() {}
+
+    // Parameterized Constructor
     public CabResult(String platform, String price, String type, String eta) {
         this.platform = platform;
         this.price = price;

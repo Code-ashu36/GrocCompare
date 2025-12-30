@@ -112,36 +112,58 @@ function triggerFadeIn(element) {
 }
 
 /**
- * FIXED: Cab Search now properly renders in the results grid
+ * FIXED: Cab Search with Identification Logic
  */
 async function searchCabs() {
     const from = document.getElementById('cab-from')?.value;
     const to = document.getElementById('cab-to')?.value;
     const resultsGrid = document.getElementById('cab-results-grid');
 
-    if (!from || !to || !resultsGrid) return;
+    if (!from || !to || !resultsGrid) {
+        console.error("Identification Error: Required HTML elements not found.");
+        return;
+    }
+
     resultsGrid.innerHTML = '<div class="spinner-modern"></div>';
 
     try {
         const response = await fetch(`/api/cabs/compare?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+        
+        if (!response.ok) {
+            throw new Error(`Server returned status ${response.status}`);
+        }
+
         const data = await response.json();
         resultsGrid.innerHTML = '';
         
+        // Error Identification: Check if backend sent an empty array
+        if (!data || data.length === 0) {
+            resultsGrid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align:center; padding: 40px; background: var(--grey-100); border-radius: 20px;">
+                    <h3>Identification: No Fares Found</h3>
+                    <p>Gemini AI could not find specific pricing for this route in the search snippets. Please try major landmarks (e.g., 'IGI Airport' to 'Connaught Place').</p>
+                </div>`;
+            return;
+        }
+
         data.forEach(cab => {
             resultsGrid.insertAdjacentHTML('beforeend', `
                 <div class="product-card" style="--card-accent: var(--accent-mint)">
                     <div class="card-body">
-                        <div class="deal-badge" style="background: #f0fff6">${cab.platform}</div>
-                        <h3 style="margin: 10px 0;">${cab.type}</h3>
-                        <p class="price-large">₹${cab.price}</p>
-                        <p class="rate-muted">ETA: ${cab.eta}</p>
+                        <div class="deal-badge" style="background: #f0fff6">${cab.platform || 'Cab'}</div>
+                        <h3 style="margin: 10px 0;">${cab.type || 'Standard'}</h3>
+                        <p class="price-large">₹${cab.price || '---'}</p>
+                        <p class="rate-muted">ETA: ${cab.eta || 'Check App'}</p>
                         <button class="compare-btn-minimal">Book Now</button>
                     </div>
                 </div>`);
         });
     } catch (err) { 
-        console.error("Cab search failed", err);
-        resultsGrid.innerHTML = '<p class="summary-label">Search unavailable. Check your connection.</p>';
+        console.error("Cab search identification failed", err);
+        resultsGrid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align:center; padding: 20px; color: #dc3545; border: 1px solid #ffcccc; border-radius: 15px;">
+                <strong>Identification Error:</strong> ${err.message}. Check your Railway logs for 'JSONArray must start with [' error.
+            </div>`;
     }
 }
 
@@ -160,6 +182,11 @@ async function searchSubs() {
         const data = await response.json();
         resultsGrid.innerHTML = '';
         
+        if (!data || data.length === 0) {
+            resultsGrid.innerHTML = '<p class="summary-label" style="grid-column: 1/-1; text-align:center;">No subscription deals found for this query.</p>';
+            return;
+        }
+
         data.forEach(sub => {
             resultsGrid.insertAdjacentHTML('beforeend', `
                 <div class="product-card" style="--card-accent: var(--accent-purple)">
@@ -174,7 +201,7 @@ async function searchSubs() {
         });
     } catch (err) { 
         console.error("Subscription search failed", err);
-        resultsGrid.innerHTML = '<p class="summary-label">Discovery engine busy. Please wait.</p>';
+        resultsGrid.innerHTML = '<p class="summary-label" style="grid-column: 1/-1; text-align:center;">Discovery engine busy. Please wait.</p>';
     }
 }
 
@@ -276,33 +303,18 @@ async function sendChatMessage() {
     } catch (err) { console.error(err); }
 }
 
-/**
- * PERSONALIZED AI BUDGET STRATEGY
- * logic to generate personalized strategy based on household spending
- */
 function handleCalculateBudget() {
     const budget = document.getElementById('monthly-budget')?.value;
     const size = document.getElementById('household-size')?.value;
     const resultBox = document.getElementById('budget-results');
     if (!budget || !size || !resultBox) return;
-    
     const perPerson = Math.round(budget / size);
-    let strategy = "";
-
-    if (perPerson < 2500) {
-        strategy = "<li>Focus on 'Bharat' brand staples for lowest market rates.</li><li>Prioritize local mandi resets on Monday mornings.</li><li>Switch from 1kg to 10kg bulk packs for rice and flour.</li>";
-    } else if (perPerson < 6000) {
-        strategy = "<li>Compare Zepto vs Blinkit for dynamic price status drops.</li><li>Use loyalty points for cleaning and household essentials.</li><li>Track 'Best Deal' badges in the Comparison Engine.</li>";
-    } else {
-        strategy = "<li>Leverage organic direct-to-farm subscription models.</li><li>Focus on high-nutrient density items across premium platforms.</li><li>Automate restocks during 'Market Price' low phases.</li>";
-    }
 
     resultBox.innerHTML = `
         <div class="budget-strategy-card" style="background: var(--grey-100); padding: 40px; border-radius: 24px; border: 1px solid var(--grey-200); margin-top: 30px;">
-            <h3 style="font-size: 1.6rem; margin-bottom: 20px;">✅ Personalized Strategy (₹${perPerson}/Person)</h3>
+            <h3 style="font-size: 1.6rem; margin-bottom: 20px;">✅ AI Spending Strategy</h3>
             <p style="font-size: 1.2rem; margin-bottom: 15px;">Monthly Target: <strong>₹${perPerson}</strong> per person.</p>
             <ul style="text-align:left; padding-left:25px; font-size:1.1rem; line-height:1.8;">
-                ${strategy}
                 <li>Compare normalized rates to find hidden bulk savings.</li>
                 <li>Track weekly Monday resets for the lowest market deals.</li>
             </ul>
