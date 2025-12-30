@@ -36,13 +36,15 @@ public class DiscoveryService {
             
             String searchResponse = restTemplate.getForObject(serpUrl, String.class);
             
-            // 2. Use Gemini to extract prices from the search clutter
+            // 2. Use Gemini to extract prices - Added STRICT formatting instructions
             String prompt = "Extract current cab fares from these search results: " + searchResponse + 
-                            ". For " + from + " to " + to + ". Return only a JSON array of objects with keys: " +
-                            "platform, price, type, eta. Do not include markdown formatting.";
+                            ". For " + from + " to " + to + ". RETURN ONLY A RAW JSON ARRAY. " +
+                            "Use these keys: platform, price, type, eta. Do not include markdown or prose.";
 
-            String aiResponse = callGemini(prompt);
-            JSONArray jsonArray = new JSONArray(aiResponse);
+            String aiRawResponse = callGemini(prompt);
+            String cleanJson = sanitizeJson(aiRawResponse); // Clean the response
+            
+            JSONArray jsonArray = new JSONArray(cleanJson);
 
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject obj = jsonArray.getJSONObject(i);
@@ -54,9 +56,8 @@ public class DiscoveryService {
                 ));
             }
         } catch (Exception e) {
-            System.err.println("Discovery Error: " + e.getMessage());
-            // Fallback to basic data if AI fails
-            results.add(new CabResult("Uber", "Checking...", "Sedan", "Unknown"));
+            System.err.println("Cab Discovery Error: " + e.getMessage());
+            results.add(new CabResult("Uber", "Checking...", "Standard", "Live Update Pending"));
         }
         return results;
     }
@@ -73,13 +74,16 @@ public class DiscoveryService {
             
             String searchResponse = restTemplate.getForObject(serpUrl, String.class);
             
+            // Added STRICT formatting instructions
             String prompt = "Analyze these search results for " + platform + 
                             " bundles in India: " + searchResponse + 
-                            ". Compare direct price vs bundles (like Jio/Airtel). Return a JSON array with keys: " +
-                            "platform, planName, price, bestDeal. Return only the array.";
+                            ". Compare direct price vs bundles (like Jio/Airtel). RETURN ONLY A RAW JSON ARRAY. " +
+                            "Use these keys: platform, planName, price, bestDeal.";
 
-            String aiResponse = callGemini(prompt);
-            JSONArray jsonArray = new JSONArray(aiResponse);
+            String aiRawResponse = callGemini(prompt);
+            String cleanJson = sanitizeJson(aiRawResponse); // Clean the response
+            
+            JSONArray jsonArray = new JSONArray(cleanJson);
 
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject obj = jsonArray.getJSONObject(i);
@@ -91,9 +95,24 @@ public class DiscoveryService {
                 ));
             }
         } catch (Exception e) {
-            System.err.println("Subscription Error: " + e.getMessage());
+            System.err.println("Subscription Discovery Error: " + e.getMessage());
         }
         return results;
+    }
+
+    /**
+     * HELPER: Sanitizes the AI response to extract only the JSON part.
+     * Prevents "JSONArray text must start with [" error.
+     */
+    private String sanitizeJson(String input) {
+        if (input.contains("```json")) {
+            input = input.substring(input.indexOf("```json") + 7);
+            input = input.substring(0, input.lastIndexOf("```"));
+        } else if (input.contains("```")) {
+            input = input.substring(input.indexOf("```") + 3);
+            input = input.substring(0, input.lastIndexOf("```"));
+        }
+        return input.trim();
     }
 
     /**
@@ -105,7 +124,9 @@ public class DiscoveryService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + prompt.replace("\"", "\\\"") + "\" }] }] }";
+        // Sanitize the prompt for valid JSON transmission
+        String escapedPrompt = prompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
+        String requestBody = "{ \"contents\": [{ \"parts\": [{ \"text\": \"" + escapedPrompt + "\" }] }] }";
 
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
         ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
