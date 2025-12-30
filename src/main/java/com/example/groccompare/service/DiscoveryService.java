@@ -29,16 +29,22 @@ public class DiscoveryService {
     public List<CabResult> getCabFares(String from, String to) {
     List<CabResult> results = new ArrayList<>();
     try {
-        String serpUrl = "https://serpapi.com/search.json?q=Uber+Ola+Rapido+fare+from+" + 
+        // IMPROVED URL: Targets pricing estimates and calculators for better snippets
+        String serpUrl = "https://serpapi.com/search.json?q=Uber+Ola+fare+estimate+from+" + 
                          from.replace(" ", "+") + "+to+" + to.replace(" ", "+") + 
-                         "+India&api_key=" + serpApiKey;
+                         "+India+price+per+km&api_key=" + serpApiKey;
         
         String searchResponse = restTemplate.getForObject(serpUrl, String.class);
         
-        // Use a stricter prompt to minimize AI conversation
-        String prompt = "Extract current cab fares from these search results: " + searchResponse + 
-                        ". For " + from + " to " + to + ". RETURN ONLY A RAW JSON ARRAY. " +
-                        "Use keys: platform, price, type, eta.";
+        // IMPROVED PROMPT: Forces numeric estimates and forbids vague "Use estimator" text
+        String prompt = "Search results context: " + searchResponse + 
+                        "\nTask: Extract specific cab fares for a ride from " + from + " to " + to + "." +
+                        "\nRules:" +
+                        "\n1. If a specific fare is found in the snippets, extract it." +
+                        "\n2. If NO specific fare is found, calculate a numeric estimate based on standard India rates (~₹18/km)." +
+                        "\n3. NEVER return vague text like 'Use price estimator'. Return a numeric range or price." +
+                        "\n4. If data is totally missing, provide a logical estimate based on typical distance." +
+                        "\nRETURN ONLY A RAW JSON ARRAY with keys: platform, price, type, eta.";
 
         String aiRawResponse = callGemini(prompt);
         
@@ -52,7 +58,7 @@ public class DiscoveryService {
             
             // FIXED: Using optString and String.valueOf to prevent type crashes
             results.add(new CabResult(
-                obj.optString("platform", "Unknown"),
+                obj.optString("platform", "Cab Provider"),
                 String.valueOf(obj.get("price")), 
                 obj.optString("type", "Standard"),
                 obj.optString("eta", "Check app")
