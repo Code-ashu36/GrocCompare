@@ -43,13 +43,6 @@ By comparing real-time data across platforms like **Zepto, Uber, Ola, Netflix, a
     * *Grocery:* Custom Scrapers / Public APIs
     * *Maps/Cabs:* Google Maps API, Uber RIDE Request API
     * *Payments:* Razorpay/Stripe (for subscription management simulation)
-
----
-
-## 📸 Application Preview
-
-*(Add screenshots here of the Dashboard showing the 3 main tabs: Grocery, Cabs, Subs)*
-
 ---
 
 ## ⚙️ Installation & Setup
@@ -78,7 +71,7 @@ By comparing real-time data across platforms like **Zepto, Uber, Ola, Netflix, a
 
 | Name | Role | ID |
 | :--- | :--- | :--- |
-| **Himanshu (Himu)** | Developer (Backend & API Integration) | Student 1 |
+| **Himanshu** | Developer (Backend & API Integration) | Student 1 |
 | **Tarun** | Developer (Database & Algorithms) | Student 2 |
 | **Pratham** | Front End Developer (UI/UX) | Student 3 |
 
